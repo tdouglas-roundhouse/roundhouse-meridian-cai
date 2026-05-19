@@ -22,9 +22,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--off-white); color: 
 .sidebar { width: 224px; flex-shrink: 0; background: var(--navy); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 20; overflow-y: auto; }
 .sidebar-logo { padding: 1.4rem 1.4rem 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.07); }
 .logo-row { display: flex; align-items: center; gap: 9px; margin-bottom: 3px; }
-.logo-circle { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.logo-circle svg { width: 100%; height: 100%; display: block; }
-.logo-name { font-size: 14px; font-weight: 500; color: #fff; letter-spacing: -0.01em; }
+.logo-img { display: block; }
+
 .logo-sub { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; text-transform: uppercase; padding-left: 43px; }
 
 /* HIERARCHY BREADCRUMB IN SIDEBAR */
@@ -240,20 +239,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
 
 <!-- PW GATE -->
 <div id="pw-gate">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.1rem;">
-    <svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" fill="none" width="30" height="30">
-      <circle cx="22" cy="22" r="18" stroke="white" stroke-width="2.2" opacity="0.85"/>
-      <circle cx="22" cy="22" r="5" fill="white" opacity="0.95"/>
-      <line x1="22" y1="17" x2="22" y2="8" stroke="white" stroke-width="2" stroke-linecap="round"/>
-      <polyline points="19,11 22,7 25,11" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="27" y1="22" x2="36" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
-      <polyline points="33,19 37,22 33,25" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="22" y1="27" x2="22" y2="36" stroke="white" stroke-width="2" stroke-linecap="round"/>
-      <polyline points="19,33 22,37 25,33" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="17" y1="22" x2="8" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
-      <polyline points="11,19 7,22 11,25" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <div class="pw-logo">ROUNDHOUSE</div>
+  <div style="margin-bottom:0.3rem;">
+    <img src="./Roundhouse_Logo.png" style="width:180px;height:auto;display:block;" alt="Roundhouse">
   </div>
   <div class="pw-sub">CAi Portal</div>
   <div class="pw-box">
@@ -291,22 +278,8 @@ function checkPW(){
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-row">
-      <div class="logo-circle">
-        <svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" fill="none">
-          <circle cx="22" cy="22" r="18" stroke="white" stroke-width="2.2" opacity="0.9"/>
-          <circle cx="22" cy="22" r="5" fill="white" opacity="0.95"/>
-          <line x1="22" y1="17" x2="22" y2="8" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <polyline points="19,11 22,7 25,11" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="27" y1="22" x2="36" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <polyline points="33,19 37,22 33,25" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="22" y1="27" x2="22" y2="36" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <polyline points="19,33 22,37 25,33" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="17" y1="22" x2="8" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <polyline points="11,19 7,22 11,25" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <span class="logo-name">ROUNDHOUSE</span>
+    <div class="logo-row" style="margin-bottom:3px;">
+      <img src="./Roundhouse_Logo.png" style="width:150px;height:auto;display:block;" alt="Roundhouse">
     </div>
     <div class="logo-sub">CAi Portal</div>
   </div>

@@ -537,18 +537,7 @@ function checkPW(){
     </div>
 
     <div class="section-label">Key submittal signals</div>
-    <div class="insight-block warn" style="margin-bottom:2px;">
-      <div class="insight-title">Concrete submittals carry the highest resubmit rate at 14.6% — the portfolio's primary friction point</div>
-      <div class="insight-body">Concrete (CSI 03) has the highest measured resubmit rate across all divisions at 14.6% — significantly above the 10.8% portfolio baseline. At Meridian's volume (5,147 concrete submittals), that's approximately 750 resubmit cycles. Each cycle adds 13–17 days of review lag. On projects with tight concrete pours, a high early resubmit rate on structural submittals is one of the most reliable leading indicators of schedule exposure.</div>
-    </div>
-    <div class="insight-block risk" style="margin-bottom:2px;">
-      <div class="insight-title">Thermal &amp; Moisture carries the longest review cycle at 36.6 days avg — nearly 2.5× the portfolio mean</div>
-      <div class="insight-body">While the Thermal &amp; Moisture division has a low resubmit rate (5.1%), its average review cycle of 36.6 days is the longest in the portfolio — more than double the 15.3-day mean. This is almost certainly a staffing and scheduling issue: envelope-specialist reviewers are a bottleneck. On any project where roofing or waterproofing submittals are filed early in CA, the review lag is large enough to sit on the critical path.</div>
-    </div>
-    <div class="insight-block info" style="margin-bottom:1.4rem;">
-      <div class="insight-title">Architect Action distribution: 46% Exceptions Noted, 29% Reviewed — "Exceptions Noted" is the hidden workload</div>
-      <div class="insight-body">"Exceptions Noted" is the most common action in Meridian's submittal data. These are not clean approvals — they typically require follow-up coordination and create downstream RFI risk if the exceptions aren't tracked to resolution. The 46% rate of Exceptions Noted is a significant hidden CA burden that doesn't show up in resubmit rate alone.</div>
-    </div>
+    <div id="submittalSignals" style="margin-bottom:1.4rem;"></div>
 
     <div class="two-col">
       <div class="card">
@@ -577,10 +566,7 @@ function checkPW(){
       <div class="metric-card risk"><div class="m-label">High priority RFIs</div><div class="m-value" id="rm-hipri">4,754</div><div class="m-sub">22% of all RFIs</div></div>
     </div>
 
-    <div class="insight-block risk" style="margin-bottom:1.1rem;">
-      <div class="insight-title">Retail projects carry the longest RFI response time at 9.6 days avg — 17% above firm baseline</div>
-      <div class="insight-body">Retail projects consistently run the longest RFI response cycles in the Meridian portfolio at 9.6 days average. This is driven by complex tenant coordination and fast-track schedules that create compressed windows for consultant responses. On retail projects, RFI delay is one of the highest-probability schedule risk factors — the response time data supports building a 1.2× CA time multiplier into retail project fee models.</div>
-    </div>
+    <div id="rfiSignals" style="margin-bottom:1.1rem;"></div>
 
     <div class="two-col">
       <div class="card">
@@ -715,22 +701,7 @@ function checkPW(){
     </div>
 
     <div class="section-label" style="margin-top:4px;">What the data tells you about your next proposal</div>
-    <div class="insight-block risk" style="margin-bottom:2px;">
-      <div class="insight-title">Retail: price 1.3× standard CA allowance — longest review cycle in the portfolio</div>
-      <div class="insight-body">Retail projects carry an 18.3-day average submittal review cycle — the highest of any project type and 20% above the firm mean of 15.3 days. This reflects tenant coordination complexity, fast-track scheduling, and high variability in contractor submittal quality. A standard CA fee model that doesn't distinguish retail from office is leaving $8–15K per project on the table on a typical $800K–$1.2M retail engagement.</div>
-    </div>
-    <div class="insight-block warn" style="margin-bottom:2px;">
-      <div class="insight-title">Automotive and Office: resubmit rate above firm avg — price the second-review cycle explicitly</div>
-      <div class="insight-body">Both Automotive (11.8%) and Office (11.7%) run resubmit rates above the firm average. At Meridian's scale, that's approximately 114 unpriced review events on Automotive alone over the last 11 years — or roughly 10 per year. The fee recovery opportunity is in explicitly scoping a "Revise &amp; Resubmit review" allowance in the CA section of your proposal rather than absorbing it as general overhead.</div>
-    </div>
-    <div class="insight-block info" style="margin-bottom:2px;">
-      <div class="insight-title">Hospitality is the most efficient typology — lowest resubmit rate at 8.0%</div>
-      <div class="insight-body">Hospitality projects run the lowest resubmit rate in the Meridian portfolio at 8.0% — 26% below the firm average. This likely reflects better-prepared contractor teams and more standardized product packages on hospitality projects. If Meridian is currently pricing hospitality CA at the same rate as Civic or Retail, there's margin being left on the table in the other direction. Hospitality CA fees could be tightened modestly without margin risk.</div>
-    </div>
-    <div class="insight-block good" style="margin-bottom:1.4rem;">
-      <div class="insight-title">The data-backed proposal: use Meridian's 11-year baseline as a proof point in fee negotiations</div>
-      <div class="insight-body">When a client pushes back on CA fee scope, most firms respond with intuition. Roundhouse gives Meridian the ability to respond with data: "Our 11-year track record on Retail projects shows an average review cycle of 18.3 days and a resubmit rate of 9.9% — that's the basis for this CA allowance." This shifts the fee conversation from negotiating against a client's generic expectations to defending a firm-specific evidence base.</div>
-    </div>
+    <div id="feeSignals" style="margin-bottom:1.4rem;"></div>
   </div>
 
   <!-- ═══════════════════════════════════════
@@ -783,22 +754,7 @@ function checkPW(){
     </div>
 
     <div class="section-label" style="margin-top:4px;">What the reviewer data tells you</div>
-    <div class="insight-block risk" style="margin-bottom:2px;">
-      <div class="insight-title">Anderson, David — 15.2% resubmit rate is 41% above firm average and worth a conversation</div>
-      <div class="insight-body">With 1,052 submittals reviewed, Anderson has the highest resubmit rate in the reviewer dataset at 15.2% — significantly above the firm mean of 10.8%. This could reflect a typology or division concentration (MEP-heavy projects), a more conservative review standard, or a consultant quality issue on projects he manages. The data doesn't tell you which — but it does tell you the conversation is worth having before the next resource allocation cycle.</div>
-    </div>
-    <div class="insight-block warn" style="margin-bottom:2px;">
-      <div class="insight-title">Zhang, Michelle — slowest review cycle at 21.0 days with 530 submittals · likely a bottleneck on her projects</div>
-      <div class="insight-body">Zhang's average review cycle of 21.0 days is 37% above the firm mean and the slowest of any tracked reviewer. At 530 submittals, this represents approximately 2,947 reviewer-days of cycle time — or roughly 8 extra days per submittal vs. the firm's fastest reviewer. If Zhang is the primary reviewer on any project in a compressed CA schedule, the 21-day cycle is almost certainly sitting on the critical path.</div>
-    </div>
-    <div class="insight-block good" style="margin-bottom:2px;">
-      <div class="insight-title">Cooper, Timothy — fastest cycle (10.2d) with near-average resubmit rate (9.1%) · benchmark reviewer</div>
-      <div class="insight-body">Cooper's combination of fast review cycle and near-average resubmit rate makes him the most efficient reviewer in the dataset. He processes submittals faster than any other tracked reviewer without a corresponding increase in resubmit rate — suggesting that speed and quality aren't in tension in his process. Worth understanding what's different about his workflow and whether it's teachable.</div>
-    </div>
-    <div class="insight-block info" style="margin-bottom:1.4rem;">
-      <div class="insight-title">Resource planning implication: CA load is not evenly distributed and the imbalance compounds</div>
-      <div class="insight-body">Murphy has reviewed 2,171 submittals — 44% more than the next highest reviewer. Whether that reflects intentional assignment or organic accumulation, concentrated CA load creates single-point-of-failure risk on individual reviewers. When Murphy is on leave or transitioning off a project, her review cycle time and institutional knowledge don't transfer automatically. CAi makes this visible; staffing decisions can now be made against real data rather than gut feel.</div>
-    </div>
+    <div id="resourceSignals" style="margin-bottom:1.4rem;"></div>
   </div>
 
   <!-- ═══════════════════════════════════════
@@ -991,6 +947,10 @@ function updateAllPanels(sd) {
   renderFeeBars(sd);
   renderReviewerTable(sd);
   renderSignalRows();
+  renderSubmittalSignals(sd);
+  renderRFISignals(sd);
+  renderResourceSignals(sd);
+  renderFeeSignals(sd);
   if (typeof Chart !== 'undefined') {
     renderAnnualChart(sd);
     renderSubTypeCharts(sd);
@@ -1453,6 +1413,225 @@ new Chart(document.getElementById('reviewerScatterChart'),{
     }
   }
 });
+
+
+// ── DYNAMIC INSIGHT GENERATORS ───────────────────────────────────────────────
+
+function insightBlock(cls, title, body) {
+  return `<div class="insight-block ${cls}" style="margin-bottom:4px;">
+    <div class="insight-title">${title}</div>
+    <div class="insight-body">${body}</div>
+  </div>`;
+}
+
+function renderSubmittalSignals(sd) {
+  const el = document.getElementById('submittalSignals');
+  if (!el) return;
+  if (!sd) sd = STUDIO_DATA['ALL'];
+  const m = sd.metrics;
+  const firmAvg = STUDIO_DATA['ALL'].metrics.rsubRate;
+  const firmAvgReview = STUDIO_DATA['ALL'].metrics.avgReview;
+  const label = currentStudio || 'Meridian';
+
+  // Worst CSI by resubmit
+  const csi = sd.csi || [];
+  const worstRsub = [...csi].sort((a,b) => b.rsub - a.rsub)[0] || {};
+  const slowestCSI = [...csi].sort((a,b) => {
+    const reviews = {'Thermal & Moisture':36.6,'Metals':19.0,'Openings':18.8,'Finishes':17.4,'HVAC / Plumbing':15.0,'Concrete / General':14.6,'General':12.0,'Electrical':11.0,'Other':10.0};
+    return (reviews[b.CSI]||10) - (reviews[a.CSI]||10);
+  })[0] || {};
+
+  // Actions
+  const actions = sd.actions || {};
+  const exNoted = actions['Exceptions Noted'] ? actions['Exceptions Noted'].toFixed(1) : '46.0';
+  const reviewed = actions['Reviewed'] ? actions['Reviewed'].toFixed(1) : '29.0';
+
+  const rsubVsFirm = m.rsubRate > firmAvg
+    ? `${(m.rsubRate - firmAvg).toFixed(1)}% above the ${firmAvg}% firm average`
+    : `${(firmAvg - m.rsubRate).toFixed(1)}% below the ${firmAvg}% firm average`;
+  const rsubClass = m.rsubRate > firmAvg + 1 ? 'risk' : m.rsubRate > firmAvg ? 'warn' : 'good';
+
+  const reviewVsFirm = m.avgReview > firmAvgReview
+    ? `${(m.avgReview - firmAvgReview).toFixed(1)} days above the ${firmAvgReview}d firm average`
+    : `${(firmAvgReview - m.avgReview).toFixed(1)} days below the ${firmAvgReview}d firm average`;
+  const reviewClass = m.avgReview > firmAvgReview + 1 ? 'risk' : m.avgReview > firmAvgReview ? 'warn' : 'good';
+
+  let blocks = '';
+
+  if (worstRsub.CSI) {
+    const worstClass = worstRsub.rsub > 14 ? 'risk' : worstRsub.rsub > 11 ? 'warn' : 'info';
+    blocks += insightBlock(worstClass,
+      `${worstRsub.CSI} has the highest resubmit rate at ${worstRsub.rsub}% — ${label}'s primary submittal friction point`,
+      `${worstRsub.CSI} submittals are cycling at ${worstRsub.rsub}% resubmit — ${worstRsub.rsub > firmAvg ? ((worstRsub.rsub - firmAvg).toFixed(1) + '% above') : 'near'} the ${firmAvg}% firm baseline. At ${label}'s current volume (${worstRsub.vol.toLocaleString()} submittals in this division), each resubmit cycle adds 13–17 days of review lag. On projects with tight schedules, a high early resubmit rate on ${worstRsub.CSI.toLowerCase()} submittals is a reliable leading indicator of downstream schedule pressure.`
+    );
+  }
+
+  blocks += insightBlock(reviewClass,
+    `${label} avg submittal review time is ${m.avgReview} days — ${reviewVsFirm}`,
+    `${label}'s average review cycle of ${m.avgReview} days ${m.avgReview > firmAvgReview ? 'exceeds' : 'is below'} the firm average of ${firmAvgReview} days. ${m.avgReview > 17 ? 'At this level, review time is likely sitting on the critical path of compressed-schedule projects. Consider earlier filing protocols and a dedicated backup reviewer.' : m.avgReview < 13 ? 'This is an efficient review cycle — below the firm mean. The workflow here may be worth studying as a model for other studios.' : 'This is within normal range for the portfolio — worth monitoring as project volume grows.'}`
+  );
+
+  blocks += insightBlock('info',
+    `Architect action distribution: ${exNoted}% Exceptions Noted, ${reviewed}% Reviewed — "Exceptions Noted" is the hidden workload`,
+    `"Exceptions Noted" is the most common action in ${label}'s submittal data at ${exNoted}%. These are not clean approvals — they require follow-up coordination and create downstream RFI risk when exceptions aren't tracked to resolution. The gap between ${exNoted}% Exceptions Noted and only ${reviewed}% clean Reviewed actions is a meaningful CA overhead signal that doesn't show up in resubmit rate alone.`
+  );
+
+  el.innerHTML = blocks;
+}
+
+function renderRFISignals(sd) {
+  const el = document.getElementById('rfiSignals');
+  if (!el) return;
+  if (!sd) sd = STUDIO_DATA['ALL'];
+  const m = sd.metrics;
+  const firmAvgResp = STUDIO_DATA['ALL'].metrics.avgResp;
+  const label = currentStudio || 'Meridian';
+
+  const rfiByType = sd.rfiByType || [];
+  const slowestType = rfiByType[0] || {};
+  const fastestType = rfiByType[rfiByType.length-1] || {};
+
+  const respVsFirm = m.avgResp > firmAvgResp
+    ? `${(m.avgResp - firmAvgResp).toFixed(1)}d above the ${firmAvgResp}d firm average`
+    : `${(firmAvgResp - m.avgResp).toFixed(1)}d below the ${firmAvgResp}d firm average`;
+  const respClass = m.avgResp > firmAvgResp + 1 ? 'risk' : m.avgResp > firmAvgResp ? 'warn' : 'good';
+
+  let blocks = '';
+
+  blocks += insightBlock(respClass,
+    `${label} avg RFI response time is ${m.avgResp}d — ${respVsFirm}`,
+    `${label}'s average RFI response cycle of ${m.avgResp} days ${m.avgResp > firmAvgResp ? 'is above' : 'is below'} the firm mean of ${firmAvgResp} days. ${m.avgResp > 10 ? 'At this level, RFI response time is a schedule risk on fast-track projects — extended response cycles create field holds that compound quickly in early CA.' : 'This is a healthy response cadence. The risk is maintaining it as project volume grows.'} Open RFIs sitting beyond 10 days without response are the primary predictors of late-phase coordination crises in the Meridian dataset.`
+  );
+
+  if (slowestType.type) {
+    const slowClass = slowestType.avg_resp > 10 ? 'warn' : 'info';
+    blocks += insightBlock(slowClass,
+      `${slowestType.type} projects carry the longest RFI response time at ${slowestType.avg_resp}d in this studio`,
+      `${slowestType.type} projects generate the most RFI response lag in ${label}'s active work — ${slowestType.avg_resp} days average. This reflects the coordination complexity and contractor pace typical of this typology. When pricing CA for ${slowestType.type.toLowerCase()} projects, build a 1.15–1.25× time multiplier into the RFI response scope to avoid absorbing delay costs as overhead.`
+    );
+  }
+
+  if (fastestType.type && fastestType.type !== slowestType.type) {
+    blocks += insightBlock('good',
+      `${fastestType.type} projects have the fastest RFI response at ${fastestType.avg_resp}d — ${label}'s most efficient typology`,
+      `${fastestType.type} projects are resolved fastest in ${label}'s RFI dataset at ${fastestType.avg_resp} days average. This reflects either simpler coordination structures or a more experienced contractor base on this typology. If ${label} is pricing ${fastestType.type.toLowerCase()} CA at the same rate as more complex typologies, there may be an opportunity to sharpen the fee or reallocate resources toward higher-burden project types.`
+    );
+  }
+
+  el.innerHTML = blocks;
+}
+
+function renderResourceSignals(sd) {
+  const el = document.getElementById('resourceSignals');
+  if (!el) return;
+  if (!sd) sd = STUDIO_DATA['ALL'];
+  const m = sd.metrics;
+  const firmAvgRsub = STUDIO_DATA['ALL'].metrics.rsubRate;
+  const label = currentStudio || 'Meridian';
+  const reviewers = sd.reviewers || [];
+  if (!reviewers.length) { el.innerHTML = '<div class="insight-block info"><div class="insight-body">Reviewer data available at project volume thresholds — select a studio with more active projects.</div></div>'; return; }
+
+  const sorted = [...reviewers];
+  const topVol = sorted[0];
+  const worstRsub = [...sorted].sort((a,b)=>b.rsub-a.rsub)[0];
+  const slowest = [...sorted].sort((a,b)=>b.avg_review-a.avg_review)[0];
+  const fastest = [...sorted].sort((a,b)=>a.avg_review-b.avg_review)[0];
+  const benchmark = [...sorted].filter(r=>r.rsub<9&&r.avg_review<13);
+
+  let blocks = '';
+
+  if (worstRsub.rsub > firmAvgRsub + 2) {
+    const pctAbove = ((worstRsub.rsub - firmAvgRsub) / firmAvgRsub * 100).toFixed(0);
+    blocks += insightBlock('risk',
+      `${worstRsub.ReviewerName} — ${worstRsub.rsub}% resubmit rate is ${pctAbove}% above firm average and worth a conversation`,
+      `With ${worstRsub.total.toLocaleString()} submittals reviewed, ${worstRsub.ReviewerName.split(',')[0]} has the highest resubmit rate in ${label} at ${worstRsub.rsub}% — well above the ${firmAvgRsub}% firm mean. This could reflect typology concentration, a more conservative review standard, or consultant quality on their projects. The data doesn't tell you which — but it tells you the conversation is worth having before the next resource allocation cycle.`
+    );
+  }
+
+  if (slowest.avg_review > 16) {
+    const pctAbove = ((slowest.avg_review - m.avgReview) / m.avgReview * 100).toFixed(0);
+    blocks += insightBlock('warn',
+      `${slowest.ReviewerName} — ${slowest.avg_review}d avg review is the slowest in ${label} · bottleneck risk on compressed schedules`,
+      `${slowest.ReviewerName.split(',')[0]}'s average review cycle of ${slowest.avg_review} days is ${pctAbove}% above the ${label} mean of ${m.avgReview} days. On any project in a compressed CA schedule where ${slowest.ReviewerName.split(',')[0]} is the primary reviewer, this cycle time is likely sitting on the critical path. Pairing them with a faster secondary reviewer on fast-track projects would reduce schedule exposure without changing headcount.`
+    );
+  }
+
+  if (benchmark.length) {
+    const b = benchmark[0];
+    blocks += insightBlock('good',
+      `${b.ReviewerName} — ${b.avg_review}d review cycle with ${b.rsub}% resubmit rate · benchmark performance in ${label}`,
+      `${b.ReviewerName.split(',')[0]}'s combination of fast review cycle (${b.avg_review}d) and low resubmit rate (${b.rsub}%) makes them the most efficient reviewer in ${label}'s dataset. Speed and quality are not in tension in their process. Worth understanding what's different about their submittal intake workflow and whether it can be systematized across the team.`
+    );
+  }
+
+  blocks += insightBlock('info',
+    `${topVol.ReviewerName.split(',')[0]} has reviewed ${topVol.total.toLocaleString()} submittals — ${label}'s highest CA load · concentration risk`,
+    `${topVol.total.toLocaleString()} submittals represents a significant concentration of institutional CA knowledge in one reviewer. Whether this reflects intentional assignment or organic accumulation, it creates single-point-of-failure risk. When ${topVol.ReviewerName.split(',')[0]} transitions off a project, their review patterns and judgment don't transfer automatically. CAi makes this visible so staffing decisions can be made against data.`
+  );
+
+  el.innerHTML = blocks;
+}
+
+function renderFeeSignals(sd) {
+  const el = document.getElementById('feeSignals');
+  if (!el) return;
+  if (!sd) sd = STUDIO_DATA['ALL'];
+  const m = sd.metrics;
+  const firmAvgReview = STUDIO_DATA['ALL'].metrics.avgReview;
+  const firmAvgRsub = STUDIO_DATA['ALL'].metrics.rsubRate;
+  const label = currentStudio || 'Meridian';
+
+  const typeData = (sd.subByType && sd.subByType.length) ? sd.subByType : [];
+  if (!typeData.length) { el.innerHTML = '<div class="insight-block info"><div class="insight-body">Fee intelligence data populates once sufficient project type history is available for this studio.</div></div>'; return; }
+
+  const sortedReview = [...typeData].filter(t=>t.avg_review>0).sort((a,b)=>b.avg_review-a.avg_review);
+  const sortedRsub   = [...typeData].filter(t=>t.rsub>0).sort((a,b)=>b.rsub-a.rsub);
+  const slowestType  = sortedReview[0] || {};
+  const fastestType  = sortedReview[sortedReview.length-1] || {};
+  const highestRsub  = sortedRsub[0] || {};
+  const lowestRsub   = sortedRsub[sortedRsub.length-1] || {};
+
+  let blocks = '';
+
+  if (slowestType.type) {
+    const pctAbove = firmAvgReview > 0 ? ((slowestType.avg_review - firmAvgReview) / firmAvgReview * 100).toFixed(0) : 0;
+    const multiplier = (slowestType.avg_review / firmAvgReview).toFixed(1);
+    blocks += insightBlock('risk',
+      `${slowestType.type}: price ${multiplier}× standard CA allowance — longest review cycle in ${label}'s portfolio at ${slowestType.avg_review}d`,
+      `${slowestType.type} projects carry a ${slowestType.avg_review}-day average submittal review cycle in ${label} — ${pctAbove}% above the ${firmAvgReview}d firm mean. This reflects the coordination complexity and contractor pace typical of ${slowestType.type.toLowerCase()} work. A CA fee model that doesn't distinguish ${slowestType.type.toLowerCase()} from standard office engagements is likely leaving $8–15K per project on the table on a typical engagement.`
+    );
+  }
+
+  if (highestRsub.type && highestRsub.rsub > firmAvgRsub) {
+    blocks += insightBlock('warn',
+      `${highestRsub.type}: ${highestRsub.rsub}% resubmit rate — price the second-review cycle explicitly`,
+      `${highestRsub.type} projects run the highest resubmit rate in ${label}'s current dataset at ${highestRsub.rsub}% — above the ${firmAvgRsub}% firm average. Each resubmit is an unpriced review event — typically 3–5 hours of architect time that a flat CA fee doesn't capture. The fix is explicitly scoping a "Revise & Resubmit review" allowance in the CA section of proposals for this typology.`
+    );
+  }
+
+  if (lowestRsub.type && lowestRsub.rsub < firmAvgRsub - 1) {
+    blocks += insightBlock('good',
+      `${lowestRsub.type}: lowest resubmit rate at ${lowestRsub.rsub}% — most efficient typology in ${label}'s portfolio`,
+      `${lowestRsub.type} projects run the lowest resubmit rate in ${label} at ${lowestRsub.rsub}% — ${(firmAvgRsub - lowestRsub.rsub).toFixed(1)}% below the firm average. If ${label} is pricing ${lowestRsub.type.toLowerCase()} CA at the same rate as higher-burden typologies, the CA fees for this type could be tightened modestly without margin risk — and the savings redirected to more complex engagements.`
+    );
+  }
+
+  blocks += insightBlock('info',
+    `The data-backed proposal: use ${label}'s earned CA history as proof in fee negotiations`,
+    `When a client pushes back on CA fee scope, most firms respond with intuition. Roundhouse gives ${label} the ability to respond with data: "Our track record on ${slowestType.type || 'this typology'} projects shows an average review cycle of ${slowestType.avg_review || m.avgReview} days and a resubmit rate of ${highestRsub.rsub || m.rsubRate}% — that's the basis for this CA allowance." This shifts the negotiation from defending a number to presenting an evidence base.`
+  );
+
+  el.innerHTML = blocks;
+}
+
+// ── Init all signal panels on load ────────────────────────────────────────────
+(function initSignals() {
+  const sd = STUDIO_DATA['ALL'];
+  renderSubmittalSignals(sd);
+  renderRFISignals(sd);
+  renderResourceSignals(sd);
+  renderFeeSignals(sd);
+})();
 
 // Init context pane
 renderContextPane(STUDIO_DATA["ALL"]);

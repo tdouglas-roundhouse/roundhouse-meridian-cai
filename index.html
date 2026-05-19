@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridian Studio — CAi Intelligence Portal | Roundhouse Labs</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --blue: #0098D8; --blue-light: #E6F5FC; --blue-mid: #B3DFF2;
+  --charcoal: #4A4A4A; --navy: #1A2B3C; --warm-gray: #9B9B9B;
+  --white: #FFFFFF; --off-white: #F8F8F8; --border: rgba(0,0,0,0.08); --border-med: rgba(0,0,0,0.12);
+  --amber: #D4820A; --amber-light: #FDF3E0; --red: #C0392B; --red-light: #FBEAEA;
+  --green: #2E7D4F; --green-light: #E8F5EE;
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--off-white); color: var(--charcoal); font-size: 15px; line-height: 1.6; min-height: 100vh; }
+.layout { display: flex; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar { width: 224px; flex-shrink: 0; background: var(--navy); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 20; overflow-y: auto; }
+.sidebar-logo { padding: 1.4rem 1.4rem 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.logo-row { display: flex; align-items: center; gap: 9px; margin-bottom: 3px; }
+.logo-circle { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.logo-circle svg { width: 100%; height: 100%; display: block; }
+.logo-name { font-size: 14px; font-weight: 500; color: #fff; letter-spacing: -0.01em; }
+.logo-sub { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; text-transform: uppercase; padding-left: 43px; }
+
+/* HIERARCHY BREADCRUMB IN SIDEBAR */
+.hier-section { padding: 0.9rem 1.4rem 0.3rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.hier-label { font-size: 9px; font-weight: 500; color: rgba(255,255,255,0.2); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
+.hier-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; cursor: pointer; padding: 3px 5px; border-radius: 4px; transition: background 0.12s; }
+.hier-row:hover { background: rgba(255,255,255,0.05); }
+.hier-row.active { background: rgba(0,152,216,0.12); }
+.hier-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.hier-text { font-size: 12px; color: rgba(255,255,255,0.55); }
+.hier-row.active .hier-text { color: #fff; font-weight: 500; }
+.hier-row.active .hier-dot { background: var(--blue); }
+.hier-sub { padding-left: 16px; }
+
+.nav-section { padding: 1.0rem 0 0.3rem; }
+.nav-label { font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.2); letter-spacing: 0.1em; text-transform: uppercase; padding: 0 1.4rem 0.4rem; display: block; }
+.nav-btn { display: flex; align-items: center; gap: 9px; padding: 0.5rem 1.4rem; font-size: 12.5px; color: rgba(255,255,255,0.45); cursor: pointer; border-left: 2px solid transparent; transition: all 0.13s; background: none; border-top: none; border-right: none; border-bottom: none; width: 100%; text-align: left; font-family: 'DM Sans', sans-serif; }
+.nav-btn:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.04); }
+.nav-btn.active { color: #fff; border-left-color: var(--blue); background: rgba(0,152,216,0.1); font-weight: 500; }
+.nav-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.4; flex-shrink: 0; }
+.nav-btn.active .nav-dot { background: var(--blue); opacity: 1; }
+
+.nav-new { font-size: 9px; font-weight: 600; background: var(--blue); color: #fff; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.04em; margin-left: auto; }
+
+.sidebar-footer { margin-top: auto; padding: 1.0rem 1.4rem 1.3rem; border-top: 1px solid rgba(255,255,255,0.07); }
+.firm-chip { background: rgba(0,152,216,0.1); border: 1px solid rgba(0,152,216,0.2); border-radius: var(--r-sm); padding: 0.6rem 0.8rem; }
+.chip-label { font-size: 9px; color: rgba(255,255,255,0.28); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+.chip-name { font-size: 13px; color: #fff; font-weight: 500; }
+.chip-meta { font-size: 11px; color: var(--blue); margin-top: 1px; }
+
+/* MAIN */
+.main { margin-left: 224px; padding: 2rem 2.25rem 5rem; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.4rem; padding-bottom: 1.1rem; border-bottom: 1px solid var(--border); }
+.eyebrow { font-size: 11px; font-weight: 500; color: var(--blue); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem; }
+.page-title { font-size: 22px; font-weight: 300; color: var(--navy); letter-spacing: -0.025em; margin-bottom: 0.15rem; line-height: 1.2; }
+.page-meta { font-size: 13px; color: var(--warm-gray); }
+.header-right { text-align: right; flex-shrink: 0; }
+.as-of { font-size: 12px; color: var(--warm-gray); margin-bottom: 5px; }
+.live-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--blue-light); color: var(--blue); font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--blue-mid); }
+.pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); animation: pulse 2s ease-in-out infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
+
+/* HIERARCHY NAV PILLS */
+.hier-nav { display: flex; align-items: center; gap: 6px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.hier-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid var(--border-med); background: var(--white); color: var(--warm-gray); transition: all 0.13s; }
+.hier-pill:hover { border-color: var(--blue-mid); color: var(--navy); }
+.hier-pill.active { background: var(--navy); color: #fff; border-color: var(--navy); font-weight: 500; }
+.hier-pill .hp-count { font-size: 10px; opacity: 0.6; font-family: 'DM Mono', monospace; }
+.hier-sep { color: var(--warm-gray); font-size: 12px; }
+
+/* PANELS */
+.panel { display: none; }
+.panel.active { display: block; animation: fadeIn 0.17s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)} }
+
+/* METRICS */
+.metrics-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 11px; margin-bottom: 1.4rem; }
+.metric-card { background: var(--white); border: 1px solid var(--border); border-top: 2px solid var(--border-med); border-radius: var(--r-md); padding: 0.95rem 1.1rem; }
+.metric-card.accent { border-top-color: var(--blue); }
+.metric-card.warn { border-top-color: var(--amber); }
+.metric-card.risk { border-top-color: var(--red); }
+.metric-card.good { border-top-color: var(--green); }
+.m-label { font-size: 11px; color: var(--warm-gray); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; }
+.m-value { font-size: 26px; font-weight: 300; color: var(--navy); letter-spacing: -0.025em; line-height: 1; margin-bottom: 0.2rem; }
+.m-unit { font-size: 13px; color: var(--warm-gray); font-weight: 400; }
+.m-sub { font-size: 12px; color: var(--warm-gray); }
+
+/* CARDS */
+.card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-md); padding: 1.15rem; margin-bottom: 12px; }
+.card:last-child { margin-bottom: 0; }
+.card-title { font-size: 11px; font-weight: 500; color: var(--warm-gray); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.9rem; }
+.card-note { font-size: 12px; color: var(--warm-gray); font-style: italic; margin-top: 0.7rem; }
+
+/* GRIDS */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+/* INSIGHT BLOCKS */
+.insight-block { border-left: 2px solid var(--border-med); padding: 0.85rem 1.0rem; margin-bottom: 2px; background: var(--white); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.insight-block.risk { border-left-color: var(--red); background: var(--red-light); }
+.insight-block.warn { border-left-color: var(--amber); background: var(--amber-light); }
+.insight-block.good { border-left-color: var(--green); background: var(--green-light); }
+.insight-block.info { border-left-color: var(--blue); background: var(--blue-light); }
+.insight-title { font-size: 13px; font-weight: 500; color: var(--navy); margin-bottom: 0.25rem; }
+.insight-body { font-size: 13px; color: var(--charcoal); line-height: 1.7; }
+
+/* BAR ROWS */
+.bar-row { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.bar-row.clickable { cursor:pointer; border-radius:5px; margin-left:-5px; padding-left:5px; transition:background 0.13s; }
+.bar-row.clickable:hover { background:rgba(0,152,216,0.07); }
+.bar-label { font-size: 12px; color: var(--charcoal); width: 148px; flex-shrink: 0; text-align: right; }
+.bar-track { flex: 1; height: 6px; background: var(--off-white); border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
+.bar-fill { height: 100%; border-radius: 3px; }
+.bar-val { font-size: 12px; color: var(--warm-gray); font-family: 'DM Mono', monospace; min-width: 38px; }
+.bar-badge { font-size: 10px; font-weight: 500; padding: 1px 7px; border-radius: 20px; white-space: nowrap; }
+
+/* SIGNAL ROWS */
+.signal-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+.signal-row:last-child { border-bottom: none; }
+.signal-row.clickable { cursor: pointer; border-radius: 5px; margin: 0 -5px; padding: 0.6rem 5px; transition: background 0.13s; }
+.signal-row.clickable:hover { background: rgba(0,152,216,0.06); }
+.signal-name { font-size: 13px; font-weight: 500; color: var(--navy); }
+.signal-meta { font-size: 12px; color: var(--warm-gray); margin-top: 1px; }
+.signal-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* BADGES */
+.badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+.badge-risk { background: var(--red-light); color: var(--red); border: 1px solid rgba(192,57,43,0.18); }
+.badge-warn { background: var(--amber-light); color: var(--amber); border: 1px solid rgba(212,130,10,0.18); }
+.badge-ok { background: var(--green-light); color: var(--green); border: 1px solid rgba(46,125,79,0.18); }
+.badge-info { background: var(--blue-light); color: var(--blue); border: 1px solid var(--blue-mid); }
+.badge-gray { background: #F0EEE9; color: var(--charcoal); border: 1px solid var(--border-med); }
+
+/* CHARTS */
+.chart-wrap { position: relative; width: 100%; }
+
+/* TABLES */
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th { text-align: left; font-size: 10px; font-weight: 500; color: var(--warm-gray); text-transform: uppercase; letter-spacing: 0.07em; padding: 0 0.7rem 0.55rem 0; border-bottom: 1px solid var(--border); }
+.data-table th.right { text-align: right; }
+.data-table td { padding: 0.6rem 0.7rem 0.6rem 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table td.right { text-align: right; }
+.data-table tr.clickable { cursor: pointer; }
+.data-table tr.clickable:hover td { background: rgba(0,152,216,0.04); }
+.proj-name { font-weight: 500; color: var(--navy); font-size: 13px; }
+.proj-sub { font-size: 11px; color: var(--warm-gray); margin-top: 1px; }
+.mono { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--charcoal); }
+
+/* TYPE TABS */
+.type-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.1rem; flex-wrap: wrap; }
+.type-tab { padding: 0.45rem 0.9rem; font-size: 12.5px; color: var(--warm-gray); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.12s; background: none; border-top: none; border-left: none; border-right: none; font-family: 'DM Sans', sans-serif; }
+.type-tab:hover { color: var(--navy); }
+.type-tab.active { color: var(--navy); border-bottom-color: var(--blue); font-weight: 500; }
+
+/* MEMO HEADER */
+.memo-header { background: var(--navy); border-radius: var(--r-md); padding: 1.3rem 1.5rem; margin-bottom: 1.3rem; display: flex; justify-content: space-between; align-items: flex-start; }
+.memo-eyebrow { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+.memo-title { font-size: 16px; font-weight: 300; color: #fff; letter-spacing: -0.02em; margin-bottom: 0.15rem; }
+.memo-sub { font-size: 12px; color: rgba(255,255,255,0.36); }
+
+/* STUDIO CARDS */
+.studio-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 14px; }
+.studio-card { background: var(--white); border: 1px solid var(--border); border-top: 3px solid var(--border-med); border-radius: var(--r-md); padding: 0.9rem 1rem; cursor: pointer; transition: all 0.13s; }
+.studio-card:hover { border-top-color: var(--blue); box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+.studio-card.active { border-top-color: var(--blue); background: var(--blue-light); }
+.sc-name { font-size: 12px; font-weight: 500; color: var(--navy); margin-bottom: 6px; }
+.sc-val { font-size: 20px; font-weight: 300; color: var(--navy); letter-spacing: -0.02em; }
+.sc-sub { font-size: 11px; color: var(--warm-gray); margin-top: 2px; }
+
+/* REVIEWER TABLE */
+.rev-bar { display: flex; align-items: center; gap: 6px; }
+.rev-track { width: 50px; height: 4px; background: var(--off-white); border-radius: 2px; overflow: hidden; border: 1px solid var(--border); }
+.rev-fill { height: 100%; border-radius: 2px; }
+
+/* FOOTER */
+.portal-footer { margin-top: 2.5rem; padding-top: 1.1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.footer-brand { font-size: 12px; color: var(--warm-gray); }
+.footer-brand strong { color: var(--navy); }
+.footer-conf { font-size: 11px; color: var(--warm-gray); font-style: italic; }
+
+/* SECTION LABEL */
+.section-label { font-size: 11px; font-weight: 500; color: var(--warm-gray); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.7rem; }
+
+/* DIVIDER */
+hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+/* LEGEND */
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 9px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--warm-gray); }
+.legend-swatch { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* DRAWER */
+#drawerOverlay { display:none;position:fixed;inset:0;background:rgba(26,43,60,0.45);z-index:100; }
+#drawer { display:none;position:fixed;top:0;right:0;bottom:0;width:560px;max-width:100vw;background:#fff;z-index:101;box-shadow:-4px 0 32px rgba(0,0,0,0.12);overflow-y:auto;flex-direction:column; }
+.drawer-hdr { background:var(--navy);padding:1.3rem 1.5rem;display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;z-index:2; }
+.drawer-item { border-bottom:1px solid rgba(0,0,0,0.07);padding:1rem 0; }
+.drawer-item:last-child { border-bottom:none; }
+.di-title { font-size:13px;font-weight:500;color:#1A2B3C;flex:1; }
+.di-meta { display:flex;flex-wrap:wrap;gap:5px;margin-top:5px; }
+.di-pill { font-size:11px;padding:2px 8px;border-radius:20px; }
+.di-signal { font-size:12px;color:#4A4A4A;margin-top:5px;padding:5px 8px;background:#F8F8F8;border-radius:4px;border-left:2px solid rgba(0,0,0,0.1); }
+
+/* PW GATE */
+#pw-gate { position:fixed;inset:0;background:#0A1628;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1.1rem; }
+#pw-gate.hidden { display:none; }
+.pw-logo { font-size:13px;font-weight:600;color:#fff;letter-spacing:0.1em; }
+.pw-sub { font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:0.06em;margin-top:-0.7rem; }
+.pw-box { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:1.8rem 2.2rem;display:flex;flex-direction:column;gap:0.9rem;min-width:280px; }
+.pw-label { font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.1em; }
+.pw-input { background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:9px 13px;color:#fff;font-size:14px;font-family:inherit;outline:none;width:100%; }
+.pw-input:focus { border-color:#0098D8; }
+.pw-btn { background:#0098D8;border:none;border-radius:6px;padding:9px 13px;color:#fff;font-size:14px;font-family:inherit;font-weight:500;cursor:pointer;transition:opacity 0.15s; }
+.pw-btn:hover { opacity:0.88; }
+.pw-error { font-size:12px;color:#C0392B;text-align:center;min-height:15px; }
+
+@media (max-width:860px) {
+  .sidebar { transform:translateX(-100%);transition:transform 0.25s ease;z-index:100; }
+  .sidebar.open { transform:translateX(0); }
+  .hamburger { display:flex!important; }
+  .main { margin-left:0;padding:1rem;padding-top:58px; }
+  .metrics-grid,.studio-grid { grid-template-columns:repeat(2,1fr); }
+  .two-col,.three-col { grid-template-columns:1fr; }
+  .page-header { flex-direction:column;gap:0.6rem; }
+  .memo-header { flex-direction:column;gap:0.6rem; }
+}
+@media (min-width:861px) {
+  .hamburger { display:none!important; }
+}
+</style>
+</head>
+<body>
+
+<!-- PW GATE -->
+<div id="pw-gate">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.1rem;">
+    <svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" fill="none" width="30" height="30">
+      <circle cx="22" cy="22" r="18" stroke="white" stroke-width="2.2" opacity="0.85"/>
+      <circle cx="22" cy="22" r="5" fill="white" opacity="0.95"/>
+      <line x1="22" y1="17" x2="22" y2="8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      <polyline points="19,11 22,7 25,11" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="27" y1="22" x2="36" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      <polyline points="33,19 37,22 33,25" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="22" y1="27" x2="22" y2="36" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      <polyline points="19,33 22,37 25,33" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="17" y1="22" x2="8" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      <polyline points="11,19 7,22 11,25" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="pw-logo">ROUNDHOUSE</div>
+  </div>
+  <div class="pw-sub">CAi Portal</div>
+  <div class="pw-box">
+    <div class="pw-label">Access password</div>
+    <input class="pw-input" id="pwInput" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPW()">
+    <button class="pw-btn" onclick="checkPW()">Enter</button>
+    <div class="pw-error" id="pwError"></div>
+  </div>
+</div>
+<script>
+(function(){
+  if(sessionStorage.getItem('rh_cai_auth')==='Roundhouse-CAeye!')
+    document.getElementById('pw-gate').classList.add('hidden');
+})();
+function checkPW(){
+  if(document.getElementById('pwInput').value==='Roundhouse-CAeye!'){
+    sessionStorage.setItem('rh_cai_auth','Roundhouse-CAeye!');
+    document.getElementById('pw-gate').classList.add('hidden');
+  }else{
+    document.getElementById('pwError').textContent='Incorrect password.';
+    document.getElementById('pwInput').value='';
+    document.getElementById('pwInput').focus();
+  }
+}
+</script>
+
+<div class="layout">
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:99;"></div>
+<button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Menu" style="display:none;position:fixed;top:12px;left:12px;z-index:101;width:38px;height:38px;border-radius:8px;background:var(--navy);border:none;cursor:pointer;flex-direction:column;gap:4px;padding:9px;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.22);">
+  <span style="display:block;width:18px;height:2px;background:#fff;border-radius:2px;"></span>
+  <span style="display:block;width:18px;height:2px;background:#fff;border-radius:2px;"></span>
+  <span style="display:block;width:18px;height:2px;background:#fff;border-radius:2px;"></span>
+</button>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-row">
+      <div class="logo-circle">
+        <svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <circle cx="22" cy="22" r="18" stroke="white" stroke-width="2.2" opacity="0.9"/>
+          <circle cx="22" cy="22" r="5" fill="white" opacity="0.95"/>
+          <line x1="22" y1="17" x2="22" y2="8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <polyline points="19,11 22,7 25,11" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="27" y1="22" x2="36" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <polyline points="33,19 37,22 33,25" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="22" y1="27" x2="22" y2="36" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <polyline points="19,33 22,37 25,33" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="17" y1="22" x2="8" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <polyline points="11,19 7,22 11,25" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="logo-name">ROUNDHOUSE</span>
+    </div>
+    <div class="logo-sub">CAi Portal</div>
+  </div>
+
+  <!-- HIERARCHY NAV -->
+  <div class="hier-section">
+    <div class="hier-label">Navigate by</div>
+    <div class="hier-row active" onclick="setHier('firm')">
+      <div class="hier-dot" style="background:#0098D8;"></div>
+      <span class="hier-text">Meridian Studio</span>
+    </div>
+    <div class="hier-sub">
+      <div class="hier-row" onclick="setHier('studio','Studio A')"><div class="hier-dot" style="background:rgba(255,255,255,0.25);"></div><span class="hier-text">Studio A</span></div>
+      <div class="hier-row" onclick="setHier('studio','Studio B')"><div class="hier-dot" style="background:rgba(255,255,255,0.25);"></div><span class="hier-text">Studio B</span></div>
+      <div class="hier-row" onclick="setHier('studio','Studio C')"><div class="hier-dot" style="background:rgba(255,255,255,0.25);"></div><span class="hier-text">Studio C</span></div>
+      <div class="hier-row" onclick="setHier('studio','Studio D')"><div class="hier-dot" style="background:rgba(255,255,255,0.25);"></div><span class="hier-text">Studio D</span></div>
+      <div class="hier-row" onclick="setHier('studio','Studio E')"><div class="hier-dot" style="background:rgba(255,255,255,0.25);"></div><span class="hier-text">Studio E</span></div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <span class="nav-label">Portfolio views</span>
+    <button class="nav-btn active" onclick="showPanel('portfolio',this)"><span class="nav-dot"></span>Portfolio overview</button>
+    <button class="nav-btn" onclick="showPanel('skyview',this)"><span class="nav-dot"></span>SkyView <span class="nav-new">NEW</span></button>
+  </div>
+  <div class="nav-section">
+    <span class="nav-label">CA intelligence</span>
+    <button class="nav-btn" onclick="showPanel('submittals',this)"><span class="nav-dot"></span>Submittal health</button>
+    <button class="nav-btn" onclick="showPanel('rfihealth',this)"><span class="nav-dot"></span>RFI health</button>
+    <button class="nav-btn" onclick="showPanel('correlation',this)"><span class="nav-dot"></span>RFI · submittal signal</button>
+    <button class="nav-btn" onclick="showPanel('weekly',this)"><span class="nav-dot"></span>Weekly intelligence</button>
+  </div>
+  <div class="nav-section">
+    <span class="nav-label">Firm intelligence</span>
+    <button class="nav-btn" onclick="showPanel('fee',this)"><span class="nav-dot"></span>Fee &amp; scope intelligence <span class="nav-new">NEW</span></button>
+    <button class="nav-btn" onclick="showPanel('resource',this)"><span class="nav-dot"></span>Resource planning <span class="nav-new">NEW</span></button>
+    <button class="nav-btn" onclick="showPanel('mitigation',this)"><span class="nav-dot"></span>Risk mitigation</button>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="firm-chip">
+      <div class="chip-label">Active firm</div>
+      <div class="chip-name">Meridian Studio</div>
+      <div class="chip-meta" id="firmChipMeta">639 projects · all studios</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <div class="eyebrow" id="pageEyebrow">CAi Intelligence Portal</div>
+      <div class="page-title" id="pageTitle">Meridian Studio — Portfolio Overview</div>
+      <div class="page-meta" id="pageMeta">639 projects · 21,618 RFIs · 30,163 submittals · 2014–2025</div>
+    </div>
+    <div class="header-right">
+      <div class="as-of">Data through 2025</div>
+      <div class="live-badge"><span class="pulse"></span> CAi active</div>
+    </div>
+  </div>
+
+  <!-- HIERARCHY FILTER PILLS -->
+  <div class="hier-nav" id="hierNav">
+    <span class="hier-pill active" onclick="setHier('firm')" data-level="firm">Meridian Studio <span class="hp-count">639</span></span>
+    <span class="hier-sep">›</span>
+    <span class="hier-pill" onclick="setHier('studio','Studio A')" data-level="studio" data-val="Studio A">Studio A <span class="hp-count">53</span></span>
+    <span class="hier-pill" onclick="setHier('studio','Studio B')" data-level="studio" data-val="Studio B">Studio B <span class="hp-count">152</span></span>
+    <span class="hier-pill" onclick="setHier('studio','Studio C')" data-level="studio" data-val="Studio C">Studio C <span class="hp-count">155</span></span>
+    <span class="hier-pill" onclick="setHier('studio','Studio D')" data-level="studio" data-val="Studio D">Studio D <span class="hp-count">165</span></span>
+    <span class="hier-pill" onclick="setHier('studio','Studio E')" data-level="studio" data-val="Studio E">Studio E <span class="hp-count">114</span></span>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PANEL 1 — PORTFOLIO OVERVIEW
+  ═══════════════════════════════════════ -->
+  <div id="portfolio" class="panel active">
+    <div class="metrics-grid">
+      <div class="metric-card accent"><div class="m-label">Total projects</div><div class="m-value" id="m-projects">639</div><div class="m-sub">2014–2025</div></div>
+      <div class="metric-card accent"><div class="m-label">Total RFIs</div><div class="m-value" id="m-rfis">21,618</div><div class="m-sub">All active projects</div></div>
+      <div class="metric-card accent"><div class="m-label">Total submittals</div><div class="m-value" id="m-subs">30,163</div><div class="m-sub">All active projects</div></div>
+      <div class="metric-card warn"><div class="m-label">Avg resubmit rate</div><div class="m-value" id="m-rsub">10.8<span class="m-unit">%</span></div><div class="m-sub">Portfolio baseline</div></div>
+    </div>
+
+    <!-- ANNUAL TREND -->
+    <div class="card">
+      <div class="card-title">RFI + submittal volume — 2018–2025</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch" style="background:#0098D8;"></span>RFIs</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#B3DFF2;"></span>Submittals</span>
+      </div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="annualChart" role="img" aria-label="Annual RFI and submittal volume 2018-2025"></canvas></div>
+      <div class="card-note">2025 submittal volume up 42% vs. 2024 — significant CA load growth. RFI volume up 28% in same period.</div>
+    </div>
+
+    <!-- STUDIO BREAKDOWN -->
+    <div class="card">
+      <div class="card-title">RFI volume by studio <span style="font-weight:400;font-size:10px;color:var(--warm-gray);margin-left:6px;">Click a studio to filter all views</span></div>
+      <div class="studio-grid" id="studioCards"></div>
+    </div>
+
+    <!-- BY PROJECT TYPE -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">RFI volume by project type</div>
+        <div class="chart-wrap" style="height:200px;"><canvas id="rfiTypeChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Resubmit rate by project type</div>
+        <div class="chart-wrap" style="height:200px;"><canvas id="rsubTypeChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- PROJECT TABLE -->
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Active projects <span style="font-weight:400;color:var(--warm-gray);font-size:10px;margin-left:6px;">Click to drill down</span></div>
+      <div class="type-tabs">
+        <button class="type-tab active" onclick="filterTable('all',this)">All</button>
+        <button class="type-tab" onclick="filterTable('Office',this)">Office</button>
+        <button class="type-tab" onclick="filterTable('Civic',this)">Civic</button>
+        <button class="type-tab" onclick="filterTable('Education',this)">Education</button>
+        <button class="type-tab" onclick="filterTable('Residential',this)">Residential</button>
+        <button class="type-tab" onclick="filterTable('Tech/Industrial',this)">Tech</button>
+        <button class="type-tab" onclick="filterTable('Retail',this)">Retail</button>
+      </div>
+      <table class="data-table" id="projTable">
+        <thead><tr>
+          <th>Project</th><th>Studio</th>
+          <th class="right">RFIs</th><th class="right">Submittals</th>
+          <th class="right">Resubmit</th><th class="right">Avg resp.</th><th class="right">Status</th>
+        </tr></thead>
+        <tbody id="projTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PANEL 2 — SKYVIEW (NEW)
+  ═══════════════════════════════════════ -->
+  <div id="skyview" class="panel">
+    <div class="memo-header">
+      <div>
+        <div class="memo-eyebrow">SkyView — Firm-level CA intelligence</div>
+        <div class="memo-title">Meridian Studio — Portfolio command view</div>
+        <div class="memo-sub">Firm → Studio → Client → Project · click any level to drill deeper</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px;">Hierarchy level</div>
+        <div style="font-size:18px;font-weight:500;color:#0098D8;" id="skyviewLevel">Firm</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="skyviewContext">All studios active</div>
+      </div>
+    </div>
+
+    <!-- FIRM-LEVEL KPIs -->
+    <div class="metrics-grid">
+      <div class="metric-card accent"><div class="m-label">Studios active</div><div class="m-value">5</div><div class="m-sub">All contributing</div></div>
+      <div class="metric-card warn"><div class="m-label">Highest resubmit</div><div class="m-value">Studio A<span class="m-unit" style="font-size:14px;"> 12.7%</span></div><div class="m-sub">Above firm avg of 10.8%</div></div>
+      <div class="metric-card good"><div class="m-label">Fastest response</div><div class="m-value">Studio B<span class="m-unit" style="font-size:14px;"> 6.6d</span></div><div class="m-sub">Avg RFI response time</div></div>
+      <div class="metric-card accent"><div class="m-label">Highest volume</div><div class="m-value">Studio D<span class="m-unit" style="font-size:14px;"> 4,956</span></div><div class="m-sub">RFIs all time</div></div>
+    </div>
+
+    <!-- STUDIO COMPARISON TABLE -->
+    <div class="card">
+      <div class="card-title">Studio comparison — CA performance <span style="font-weight:400;font-size:10px;color:var(--warm-gray);margin-left:6px;">Click a studio row to see its projects</span></div>
+      <table class="data-table">
+        <thead><tr>
+          <th>Studio</th><th class="right">Projects</th><th class="right">RFIs</th><th class="right">Submittals</th>
+          <th class="right">Resubmit rate</th><th class="right">Avg RFI resp.</th><th class="right">Signal</th>
+        </tr></thead>
+        <tbody id="studioTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- CLIENT TYPE BREAKDOWN -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">CA burden by client type — avg review days</div>
+        <div class="chart-wrap" style="height:210px;"><canvas id="clientBurdenChart"></canvas></div>
+        <div class="card-note">Retail and Education clients carry the longest submittal review cycles — 18–16 days avg. Price CA services accordingly in proposals to these client types.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Resubmit rate by client type — fee exposure</div>
+        <div class="chart-wrap" style="height:210px;"><canvas id="clientRsubChart"></canvas></div>
+        <div class="card-note">Automotive and Office clients generate the highest resubmit rates — 11.8% and 11.7% — indicating higher CA coordination burden per dollar of fee.</div>
+      </div>
+    </div>
+
+    <!-- SKYVIEW INSIGHTS -->
+    <div class="section-label" style="margin-top:4px;">What SkyView surfaces that no other CA platform provides</div>
+    <div class="insight-block risk" style="margin-bottom:2px;">
+      <div class="insight-title">Studio A is an outlier — 12.7% resubmit rate vs. firm avg of 10.8%</div>
+      <div class="insight-body">Studio A's resubmit rate is 18% above the firm average. At the project level this looks like normal CA friction. At the firm level it is a pattern — likely reflecting either a specific typology concentration (Office/Corporate) or a subset of consultants that Studio A uses more frequently than other studios. SkyView makes this visible in minutes. A principal-level conversation about Studio A's submittal QA process could reduce firm-wide CA overhead.</div>
+    </div>
+    <div class="insight-block warn" style="margin-bottom:2px;">
+      <div class="insight-title">2025 submittal volume surge (+42% vs. 2024) is outpacing RFI growth (+28%) — documentation backlog signal</div>
+      <div class="insight-body">When submittal volume grows faster than RFI volume, it typically indicates that more coordination packages are being generated without resolving underlying design questions. The gap between submittal and RFI growth in 2025 is the widest in the Meridian dataset — a leading indicator that RFI spikes are likely in Q1 2026 unless the submittal resubmit cycle clears faster.</div>
+    </div>
+    <div class="insight-block info" style="margin-bottom:1.4rem;">
+      <div class="insight-title">Studio D has the highest project count (165) and RFI volume (4,956) but the lowest resubmit rate (10.5%)</div>
+      <div class="insight-body">This is the inverse of what you'd expect — high volume with controlled quality. Studio D's workflow is worth studying as a firm standard. The CA team's process for managing submittals appears to be more systematic than Studios A and C, both of which carry higher resubmit rates with lower volumes.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PANEL 3 — SUBMITTAL HEALTH
+  ═══════════════════════════════════════ -->
+  <div id="submittals" class="panel">
+    <div class="metrics-grid">
+      <div class="metric-card accent"><div class="m-label">Total submittals</div><div class="m-value">30,163</div><div class="m-sub">All active projects</div></div>
+      <div class="metric-card warn"><div class="m-label">Resubmit rate</div><div class="m-value">10.8<span class="m-unit">%</span></div><div class="m-sub">Revise &amp; Resubmit actions</div></div>
+      <div class="metric-card warn"><div class="m-label">Median review time</div><div class="m-value">13 <span class="m-unit">days</span></div><div class="m-sub">Mean: 15.3 days</div></div>
+      <div class="metric-card risk"><div class="m-label">Open submittals</div><div class="m-value">143</div><div class="m-sub">Pending architect action</div></div>
+    </div>
+
+    <div class="section-label">Key submittal signals</div>
+    <div class="insight-block warn" style="margin-bottom:2px;">
+      <div class="insight-title">Concrete submittals carry the highest resubmit rate at 14.6% — the portfolio's primary friction point</div>
+      <div class="insight-body">Concrete (CSI 03) has the highest measured resubmit rate across all divisions at 14.6% — significantly above the 10.8% portfolio baseline. At Meridian's volume (5,147 concrete submittals), that's approximately 750 resubmit cycles. Each cycle adds 13–17 days of review lag. On projects with tight concrete pours, a high early resubmit rate on structural submittals is one of the most reliable leading indicators of schedule exposure.</div>
+    </div>
+    <div class="insight-block risk" style="margin-bottom:2px;">
+      <div class="insight-title">Thermal &amp; Moisture carries the longest review cycle at 36.6 days avg — nearly 2.5× the portfolio mean</div>
+      <div class="insight-body">While the Thermal &amp; Moisture division has a low resubmit rate (5.1%), its average review cycle of 36.6 days is the longest in the portfolio — more than double the 15.3-day mean. This is almost certainly a staffing and scheduling issue: envelope-specialist reviewers are a bottleneck. On any project where roofing or waterproofing submittals are filed early in CA, the review lag is large enough to sit on the critical path.</div>
+    </div>
+    <div class="insight-block info" style="margin-bottom:1.4rem;">
+      <div class="insight-title">Architect Action distribution: 46% Exceptions Noted, 29% Reviewed — "Exceptions Noted" is the hidden workload</div>
+      <div class="insight-body">"Exceptions Noted" is the most common action in Meridian's submittal data. These are not clean approvals — they typically require follow-up coordination and create downstream RFI risk if the exceptions aren't tracked to resolution. The 46% rate of Exceptions Noted is a significant hidden CA burden that doesn't show up in resubmit rate alone.</div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Submittal volume + resubmit rate by CSI division</div>
+        <div style="font-size:11px;color:var(--warm-gray);margin-bottom:9px;">Volume (bar) · Resubmit % (badge)</div>
+        <div id="csiBarRows"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Architect action distribution</div>
+        <div class="chart-wrap" style="height:200px;"><canvas id="actionChart"></canvas></div>
+        <hr>
+        <div class="card-title">Review time by CSI division</div>
+        <div class="chart-wrap" style="height:160px;"><canvas id="reviewTimeChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PANEL 4 — RFI HEALTH
+  ═══════════════════════════════════════ -->
+  <div id="rfihealth" class="panel">
+    <div class="metrics-grid">
+      <div class="metric-card accent"><div class="m-label">Total RFIs</div><div class="m-value">21,618</div><div class="m-sub">All active projects</div></div>
+      <div class="metric-card warn"><div class="m-label">Open RFIs</div><div class="m-value">108</div><div class="m-sub">Awaiting response</div></div>
+      <div class="metric-card warn"><div class="m-label">Median response time</div><div class="m-value">4<span class="m-unit">d</span></div><div class="m-sub">Mean: 8.2d · high variance</div></div>
+      <div class="metric-card risk"><div class="m-label">High priority RFIs</div><div class="m-value">4,754</div><div class="m-sub">22% of all RFIs</div></div>
+    </div>
+
+    <div class="insight-block risk" style="margin-bottom:1.1rem;">
+      <div class="insight-title">Retail projects carry the longest RFI response time at 9.6 days avg — 17% above firm baseline</div>
+      <div class="insight-body">Retail projects consistently run the longest RFI response cycles in the Meridian portfolio at 9.6 days average. This is driven by complex tenant coordination and fast-track schedules that create compressed windows for consultant responses. On retail projects, RFI delay is one of the highest-probability schedule risk factors — the response time data supports building a 1.2× CA time multiplier into retail project fee models.</div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Avg RFI response time by project type</div>
+        <div class="chart-wrap" style="height:210px;"><canvas id="rfiRespTypeChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">RFI volume — annual trend 2018–2025</div>
+        <div class="chart-wrap" style="height:210px;"><canvas id="rfiAnnualChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0;">
+      <div class="card-title">RFI priority distribution by studio</div>
+      <div class="chart-wrap" style="height:180px;"><canvas id="rfiPriorityChart"></canvas></div>
+      <div class="card-note">High-priority RFIs represent 22% of total volume — significantly above industry benchmark of ~12%. This suggests either over-classification by GCs or genuine coordination urgency. Both have fee implications.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PANEL 5 — CORRELATION SIGNAL
+  ═══════════════════════════════════════ -->
+  <div id="correlation" class="panel">
+    <div style="background:var(--navy);border-radius:var(--r-md);padding:1.2rem 1.5rem;margin-bottom:1.2rem;display:flex;gap:1.4rem;align-items:flex-start;">
+      <div style="flex-shrink:0;text-align:center;">
+        <div style="font-size:32px;font-weight:300;color:#0098D8;letter-spacing:-0.03em;line-height:1;">1.9×</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">RFI density</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);">multiplier</div>
+      </div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.72);line-height:1.72;">
+        <strong style="color:#fff;">Projects with elevated submittal resubmit rates generate nearly twice the RFI volume of projects with clean submittal workflows.</strong> In the Meridian dataset, projects in the top quartile for early-phase resubmissions show materially higher RFI density 4–8 weeks later. The mechanism: a returned submittal signals an unresolved document gap — and that same gap surfaces as a field RFI once construction begins.
+      </div>
+    </div>
+
+    <div class="section-label">What this signal means in practice</div>
+    <div class="insight-block risk" style="margin-bottom:2px;">
+      <div class="insight-title">The 4–8 week lag is a window for intervention — not a post-mortem</div>
+      <div class="insight-body">When Meridian's submittal data is segmented by early-phase resubmit rate, projects in the top quartile consistently show higher RFI volume 4–8 weeks later. CAi surfaces this signal at the project level before the RFIs arrive — enabling a principal conversation while there's still time to get ahead of it. Without a platform that holds both data streams simultaneously, this signal is invisible until the damage is done.</div>
+    </div>
+    <div class="insight-block warn" style="margin-bottom:2px;">
+      <div class="insight-title">Concrete resubmits (14.6%) are the highest-risk leading indicator in Meridian's dataset</div>
+      <div class="insight-body">Concrete is the highest-volume submittal division in the portfolio and carries the highest resubmit rate. Structural submittals that cycle through resubmit in early CA consistently generate MEP and envelope RFIs in subsequent months — the structural resolution creates the field conditions that trigger downstream coordination questions. Concrete resubmit rate in weeks 2–6 of CA is Meridian's strongest leading indicator of a difficult mid-phase.</div>
+    </div>
+    <div class="insight-block info" style="margin-bottom:1.4rem;">
+      <div class="insight-title">This cross-signal is only visible when both data streams are held in the same architecture</div>
+      <div class="insight-body">Procore holds RFIs and submittals in separate modules, typically across different GC environments. Roundhouse holds both streams in a single architecture indexed to your firm. The resubmit → RFI correlation is not a hypothesis — it's a pattern that repeats consistently across Meridian's 639-project, 11-year dataset. This is the data moat. It compounds with every project added.</div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Sub:RFI ratio — 2018–2025</div>
+        <div class="chart-wrap" style="height:220px;"><canvas id="ratioChart"></canvas></div>
+        <div class="card-note">Rising ratio signals documentation volume outpacing coordination resolution — a leading indicator of RFI spikes in the following period.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Current projects by combined signal</div>
+        <div id="signalRows"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PANEL 6 — WEEKLY INTELLIGENCE
+  ═══════════════════════════════════════ -->
+  <div id="weekly" class="panel">
+    <div class="memo-header">
+      <div>
+        <div class="memo-eyebrow">Weekly intelligence report</div>
+        <div class="memo-title">State of portfolio — week of May 12, 2026</div>
+        <div class="memo-sub">Meridian Studio · 639 projects · RFIs &amp; Submittals</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px;">Portfolio verdict</div>
+        <div style="font-size:22px;font-weight:600;color:#D4820A;letter-spacing:-0.01em;">WATCH</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:2px;">3 projects require action this week</div>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card accent"><div class="m-label">RFIs this week</div><div class="m-value">64</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px;"><span style="font-size:12px;color:#D4820A;font-weight:500;">▲ 18%</span><span style="font-size:11px;color:var(--warm-gray);">vs 54 last week</span></div></div>
+      <div class="metric-card warn"><div class="m-label">Open RFIs</div><div class="m-value" style="color:var(--amber);">108</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px;"><span style="font-size:12px;color:#C0392B;font-weight:500;">▲ 14</span><span style="font-size:11px;color:var(--warm-gray);">vs 94 last week</span></div></div>
+      <div class="metric-card risk"><div class="m-label">Open submittals</div><div class="m-value" style="color:var(--red);">143</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px;"><span style="font-size:12px;color:#C0392B;font-weight:500;">▲ 22</span><span style="font-size:11px;color:var(--warm-gray);">vs 121 last week</span></div></div>
+      <div class="metric-card good"><div class="m-label">Avg RFI response</div><div class="m-value">8.2<span class="m-unit">d</span></div><div style="display:flex;align-items:center;gap:5px;margin-top:3px;"><span style="font-size:12px;color:#2E7D4F;font-weight:500;">▼ 0.8d</span><span style="font-size:11px;color:var(--warm-gray);">vs last week</span></div></div>
+    </div>
+
+    <div class="section-label">What requires a decision today</div>
+    <div class="insight-block risk" style="margin-bottom:2px;">
+      <div class="insight-title">San Francisco Fire Station — combined signal at portfolio high · call PM today</div>
+      <div class="insight-body">23347 - San Francisco Fire Station carries a 20.3% resubmit rate with 8 open RFIs — the highest combined CAi risk score in the active portfolio. Concrete submittals have been cycling through resubmit for 3 consecutive rounds, suggesting a structural coordination gap that hasn't been resolved at the document level. Based on Meridian's 11-year pattern, projects at this signal level see RFI volume double within 4–6 weeks without principal intervention.</div>
+    </div>
+    <div class="insight-block risk" style="margin-bottom:2px;">
+      <div class="insight-title">Marin Training Center — 6 open RFIs, 18.9% resubmit rate, no response time on record</div>
+      <div class="insight-body">24575 - Marin Training Center shows an elevated resubmit rate (18.9%) and 6 open RFIs with no logged response time — suggesting either RFIs are being handled outside the platform or the GC hasn't initiated responses. Both scenarios require a principal-level check-in. Projects with no response time data in the Roundhouse system are a monitoring gap regardless of their risk level.</div>
+    </div>
+    <div class="insight-block warn" style="margin-bottom:1.4rem;">
+      <div class="insight-title">Concord Data Center — 11.5d avg RFI response with 9.1% resubmit — manageable but trending up</div>
+      <div class="insight-body">20826 - Concord Data Center has the highest logged RFI response time in the active portfolio at 11.5 days — above the 8.2-day firm mean. MEP coordination is the driver. No immediate action required, but worth a quick check on whether the tech consultant response cycle is slowing field progress.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PANEL 7 — FEE & SCOPE INTELLIGENCE (NEW)
+  ═══════════════════════════════════════ -->
+  <div id="fee" class="panel">
+    <div class="memo-header">
+      <div>
+        <div class="memo-eyebrow">Fee &amp; scope intelligence</div>
+        <div class="memo-title">CA burden → proposal calibration</div>
+        <div class="memo-sub">Derived from 30,163 submittals · 21,618 RFIs · 11-year Meridian baseline</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px;">Data confidence</div>
+        <div style="font-size:20px;font-weight:600;color:#0098D8;">HIGH</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:2px;">51,781 records · 639 projects</div>
+      </div>
+    </div>
+
+    <div class="section-label">CA burden by project type — proposal calibration</div>
+    <div style="font-size:12px;color:var(--warm-gray);margin-bottom:10px;">Where actual CA burden (resubmit rate + review time) diverges from what a standard fee model would allocate, your next proposal of that type is likely underpriced.</div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Avg submittal review time by project type <span style="font-weight:400;font-size:10px;color:var(--blue);">days</span></div>
+        <div id="feeReviewBars"></div>
+        <div class="card-note">Retail (18.3d) and Education (15.7d) carry the longest review cycles — price these client types with a 1.2–1.3× CA multiplier on submittal review scope.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Resubmit rate by project type <span style="font-weight:400;font-size:10px;color:var(--blue);">% of submittals returned</span></div>
+        <div id="feeRsubBars"></div>
+        <div class="card-note">Automotive (11.8%) and Office (11.7%) generate the most resubmit cycles. Each resubmit cycle is an unpriced review event — 3–5 hours of architect time that a flat CA fee doesn't capture.</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:4px;">What the data tells you about your next proposal</div>
+    <div class="insight-block risk" style="margin-bottom:2px;">
+      <div class="insight-title">Retail: price 1.3× standard CA allowance — longest review cycle in the portfolio</div>
+      <div class="insight-body">Retail projects carry an 18.3-day average submittal review cycle — the highest of any project type and 20% above the firm mean of 15.3 days. This reflects tenant coordination complexity, fast-track scheduling, and high variability in contractor submittal quality. A standard CA fee model that doesn't distinguish retail from office is leaving $8–15K per project on the table on a typical $800K–$1.2M retail engagement.</div>
+    </div>
+    <div class="insight-block warn" style="margin-bottom:2px;">
+      <div class="insight-title">Automotive and Office: resubmit rate above firm avg — price the second-review cycle explicitly</div>
+      <div class="insight-body">Both Automotive (11.8%) and Office (11.7%) run resubmit rates above the firm average. At Meridian's scale, that's approximately 114 unpriced review events on Automotive alone over the last 11 years — or roughly 10 per year. The fee recovery opportunity is in explicitly scoping a "Revise &amp; Resubmit review" allowance in the CA section of your proposal rather than absorbing it as general overhead.</div>
+    </div>
+    <div class="insight-block info" style="margin-bottom:2px;">
+      <div class="insight-title">Hospitality is the most efficient typology — lowest resubmit rate at 8.0%</div>
+      <div class="insight-body">Hospitality projects run the lowest resubmit rate in the Meridian portfolio at 8.0% — 26% below the firm average. This likely reflects better-prepared contractor teams and more standardized product packages on hospitality projects. If Meridian is currently pricing hospitality CA at the same rate as Civic or Retail, there's margin being left on the table in the other direction. Hospitality CA fees could be tightened modestly without margin risk.</div>
+    </div>
+    <div class="insight-block good" style="margin-bottom:1.4rem;">
+      <div class="insight-title">The data-backed proposal: use Meridian's 11-year baseline as a proof point in fee negotiations</div>
+      <div class="insight-body">When a client pushes back on CA fee scope, most firms respond with intuition. Roundhouse gives Meridian the ability to respond with data: "Our 11-year track record on Retail projects shows an average review cycle of 18.3 days and a resubmit rate of 9.9% — that's the basis for this CA allowance." This shifts the fee conversation from negotiating against a client's generic expectations to defending a firm-specific evidence base.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PANEL 8 — RESOURCE PLANNING (NEW)
+  ═══════════════════════════════════════ -->
+  <div id="resource" class="panel">
+    <div class="memo-header">
+      <div>
+        <div class="memo-eyebrow">Resource planning intelligence</div>
+        <div class="memo-title">CA workload · reviewer performance · staffing signals</div>
+        <div class="memo-sub">Derived from reviewer-level submittal data · 11-year Meridian baseline</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px;">Reviewers tracked</div>
+        <div style="font-size:20px;font-weight:600;color:#0098D8;">11</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:2px;">Min. 50 submittals reviewed</div>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card accent"><div class="m-label">Top reviewer volume</div><div class="m-value">2,171</div><div class="m-sub">Murphy, Jessica</div></div>
+      <div class="metric-card warn"><div class="m-label">Highest resubmit rate</div><div class="m-value">15.2<span class="m-unit">%</span></div><div class="m-sub">Anderson, David</div></div>
+      <div class="metric-card good"><div class="m-label">Fastest review cycle</div><div class="m-value">10.2<span class="m-unit">d</span></div><div class="m-sub">Cooper, Timothy</div></div>
+      <div class="metric-card warn"><div class="m-label">Slowest review cycle</div><div class="m-value">21.0<span class="m-unit">d</span></div><div class="m-sub">Zhang, Michelle</div></div>
+    </div>
+
+    <div class="section-label">Reviewer workload &amp; performance</div>
+    <div style="font-size:12px;color:var(--warm-gray);margin-bottom:10px;">Review cycle time and resubmit rate by team member. Resubmit rate reflects submittals returned under their review — it measures review quality, not just volume. Click any row for detail.</div>
+
+    <div class="card">
+      <table class="data-table" id="reviewerTable">
+        <thead><tr>
+          <th>Reviewer</th><th class="right">Submittals reviewed</th><th class="right">Resubmit rate</th>
+          <th class="right">Avg review time</th><th class="right">Workload signal</th>
+        </tr></thead>
+        <tbody id="reviewerTableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Review volume by team member</div>
+        <div class="chart-wrap" style="height:240px;"><canvas id="reviewerVolChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Resubmit rate vs. review time — efficiency scatter</div>
+        <div class="chart-wrap" style="height:240px;"><canvas id="reviewerScatterChart"></canvas></div>
+        <div class="card-note">Upper-left = fast but high resubmit (potential QA tradeoff). Lower-right = thorough but slow (potential bottleneck). Lower-left = benchmark performance.</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:4px;">What the reviewer data tells you</div>
+    <div class="insight-block risk" style="margin-bottom:2px;">
+      <div class="insight-title">Anderson, David — 15.2% resubmit rate is 41% above firm average and worth a conversation</div>
+      <div class="insight-body">With 1,052 submittals reviewed, Anderson has the highest resubmit rate in the reviewer dataset at 15.2% — significantly above the firm mean of 10.8%. This could reflect a typology or division concentration (MEP-heavy projects), a more conservative review standard, or a consultant quality issue on projects he manages. The data doesn't tell you which — but it does tell you the conversation is worth having before the next resource allocation cycle.</div>
+    </div>
+    <div class="insight-block warn" style="margin-bottom:2px;">
+      <div class="insight-title">Zhang, Michelle — slowest review cycle at 21.0 days with 530 submittals · likely a bottleneck on her projects</div>
+      <div class="insight-body">Zhang's average review cycle of 21.0 days is 37% above the firm mean and the slowest of any tracked reviewer. At 530 submittals, this represents approximately 2,947 reviewer-days of cycle time — or roughly 8 extra days per submittal vs. the firm's fastest reviewer. If Zhang is the primary reviewer on any project in a compressed CA schedule, the 21-day cycle is almost certainly sitting on the critical path.</div>
+    </div>
+    <div class="insight-block good" style="margin-bottom:2px;">
+      <div class="insight-title">Cooper, Timothy — fastest cycle (10.2d) with near-average resubmit rate (9.1%) · benchmark reviewer</div>
+      <div class="insight-body">Cooper's combination of fast review cycle and near-average resubmit rate makes him the most efficient reviewer in the dataset. He processes submittals faster than any other tracked reviewer without a corresponding increase in resubmit rate — suggesting that speed and quality aren't in tension in his process. Worth understanding what's different about his workflow and whether it's teachable.</div>
+    </div>
+    <div class="insight-block info" style="margin-bottom:1.4rem;">
+      <div class="insight-title">Resource planning implication: CA load is not evenly distributed and the imbalance compounds</div>
+      <div class="insight-body">Murphy has reviewed 2,171 submittals — 44% more than the next highest reviewer. Whether that reflects intentional assignment or organic accumulation, concentrated CA load creates single-point-of-failure risk on individual reviewers. When Murphy is on leave or transitioning off a project, her review cycle time and institutional knowledge don't transfer automatically. CAi makes this visible; staffing decisions can now be made against real data rather than gut feel.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PANEL 9 — RISK MITIGATION
+  ═══════════════════════════════════════ -->
+  <div id="mitigation" class="panel">
+    <div class="memo-header">
+      <div>
+        <div class="memo-eyebrow">Risk mitigation intelligence</div>
+        <div class="memo-title">From insight to action — Meridian Studio portfolio</div>
+        <div class="memo-sub">CAi recommendations based on 11-year CA dataset · 2025</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px;">CAi confidence</div>
+        <div style="font-size:20px;font-weight:600;color:#0098D8;">HIGH</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:2px;">51,781 records · 11-year baseline</div>
+      </div>
+    </div>
+
+    <div class="section-label">Document standards gaps — where RFI volume signals drawing quality issues</div>
+
+    <div class="card">
+      <table class="data-table">
+        <thead><tr>
+          <th style="width:130px;">Division</th><th style="width:200px;">Gap identified</th>
+          <th>Recommended action</th><th class="right" style="width:80px;">Priority</th>
+        </tr></thead>
+        <tbody>
+          <tr><td><span style="font-weight:500;color:var(--navy);font-size:12px;">Concrete (03)</span></td>
+            <td style="font-size:11px;color:var(--charcoal);">Highest resubmit rate (14.6%) — structural connection details and mix designs returning at 1.5× portfolio rate</td>
+            <td style="font-size:11px;color:var(--charcoal);">Require engineer-confirmed concrete submittal checklist before GC submission. Build pre-approved mix design library by project type. Structural engineer to confirm submittal readiness before filing.</td>
+            <td class="right"><span class="badge badge-risk">Critical</span></td></tr>
+          <tr><td><span style="font-weight:500;color:var(--navy);font-size:12px;">Thermal &amp; Moisture</span></td>
+            <td style="font-size:11px;color:var(--charcoal);">Longest review cycle at 36.6 days — envelope specialist bottleneck in review process</td>
+            <td style="font-size:11px;color:var(--charcoal);">Mandate early submittal filing for roofing/waterproofing (week 2–3 of CA, not week 6). Designate a backup envelope reviewer on all projects. Add review time allowance to CA scope for this division.</td>
+            <td class="right"><span class="badge badge-risk">Critical</span></td></tr>
+          <tr><td><span style="font-weight:500;color:var(--navy);font-size:12px;">Openings (08)</span></td>
+            <td style="font-size:11px;color:var(--charcoal);">18.8-day avg review cycle + 9.7% resubmit — glazing coordination recurring friction point</td>
+            <td style="font-size:11px;color:var(--charcoal);">Mandate pre-submittal coordination meeting with glazing subcontractor before shop drawings are issued. Add standard head/sill/jamb details to firm drawing standards.</td>
+            <td class="right"><span class="badge badge-warn">High</span></td></tr>
+          <tr><td><span style="font-weight:500;color:var(--navy);font-size:12px;">Metals (05)</span></td>
+            <td style="font-size:11px;color:var(--charcoal);">19.0-day review cycle — structural steel connection schedule incomplete at CD issue</td>
+            <td style="font-size:11px;color:var(--charcoal);">Require structural engineer to issue complete connection schedule with CDs. Flag as a contract deliverable, not a shop drawing item.</td>
+            <td class="right"><span class="badge badge-warn">High</span></td></tr>
+          <tr><td><span style="font-weight:500;color:var(--navy);font-size:12px;">Finishes (09)</span></td>
+            <td style="font-size:11px;color:var(--charcoal);">17.4-day review cycle — finish schedules not coordinated with submittal log at CA start</td>
+            <td style="font-size:11px;color:var(--charcoal);">Issue complete finish schedule with spec sections cross-referenced at CA kickoff. Build pre-approved product families by client type (especially Corporate and Retail).</td>
+            <td class="right"><span class="badge badge-ok">Moderate</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-label" style="margin-top:1.3rem;">Consultant performance — where your data supports a contract language conversation</div>
+    <div class="insight-block risk" style="margin-bottom:2px;">
+      <div class="insight-title">Concrete contractors — 14.6% resubmit across 5,147 submittals · contractual pre-submission QA required</div>
+      <div class="insight-body">The concrete resubmit rate is persistent and not project-specific — it appears across typologies and studios, suggesting it's a systemic issue with how structural submittals are prepared before submission. A contractual requirement for engineer-stamped pre-submission checklist (confirming shop drawings have been checked against CDs and structural calculations) would eliminate most first-cycle concrete resubmittals.</div>
+    </div>
+    <div class="insight-block warn" style="margin-bottom:1.4rem;">
+      <div class="insight-title">Retail general contractors — longest submittal review cycle signals fast-track coordination failure</div>
+      <div class="insight-body">Retail GCs submit packages earlier in the project timeline but take longer to clear review — a pattern that reflects fast-track construction pressure combined with incomplete submittal packages. Adding a pre-submittal coordination requirement (30-minute call between architect and GC before any package over 10 items is filed) would reduce first-cycle review time on retail projects by an estimated 15–20%.</div>
+    </div>
+  </div>
+
+  <div class="portal-footer">
+    <div class="footer-brand"><strong>Roundhouse Labs</strong> · CAi Intelligence Platform · roundhouselabs.com</div>
+    <div class="footer-conf">Confidential · Meridian Studio · 2025</div>
+  </div>
+
+</main>
+</div>
+
+<!-- DRAWER -->
+<div id="drawerOverlay" onclick="closeDrawer()"></div>
+<aside id="drawer">
+  <div class="drawer-hdr">
+    <div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.3rem;" id="drawerEyebrow">Detail</div>
+      <div style="font-size:16px;font-weight:300;color:#fff;letter-spacing:-0.02em;" id="drawerTitle">—</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.35);" id="drawerSub"></div>
+    </div>
+    <button onclick="closeDrawer()" style="background:rgba(255,255,255,0.1);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+  </div>
+  <div id="drawerItems" style="padding:0.5rem 1.4rem 2rem;"></div>
+</aside>
+
+<!-- DATA -->
+<script>
+const PROJECTS = [{"name": "Pleasanton Branch Office", "num": "14411", "studio": "Studio A", "type": "Office", "client": "Corporate", "rfis": 627, "subs": 662, "rsub": 13.4, "resp": 7.9, "review": 14.7, "openRFIs": 0, "risk": "medium", "year": 2018}, {"name": "South San Francisco Retail Center", "num": "24417", "studio": "Studio E", "type": "Retail", "client": "Commercial", "rfis": 393, "subs": 304, "rsub": 10.9, "resp": 8.4, "review": 18.9, "openRFIs": 0, "risk": "medium", "year": 2019}, {"name": "Petaluma Corporate HQ", "num": "14724", "studio": "Studio A", "type": "Office", "client": "Corporate", "rfis": 298, "subs": 164, "rsub": 14.6, "resp": 7.0, "review": 11.7, "openRFIs": 0, "risk": "medium", "year": 2020}, {"name": "Palo Alto Residential Tower", "num": "16385", "studio": "Studio B", "type": "Residential", "client": "Developer", "rfis": 278, "subs": 166, "rsub": 6.6, "resp": 4.2, "review": 12.7, "openRFIs": 0, "risk": "low", "year": 2017}, {"name": "San Jose Municipal Building", "num": "21746", "studio": "Studio D", "type": "Mixed Use", "client": "Municipal", "rfis": 207, "subs": 210, "rsub": 14.3, "resp": 10.4, "review": 43.0, "openRFIs": 0, "risk": "medium", "year": 2025}, {"name": "Millbrae Branch Office", "num": "20701", "studio": "Studio C", "type": "Office", "client": "Corporate", "rfis": 192, "subs": 142, "rsub": 15.5, "resp": 7.7, "review": 13.4, "openRFIs": 0, "risk": "medium", "year": 2022}, {"name": "San Rafael Mixed-Use Development", "num": "16170", "studio": "Studio B", "type": "Residential", "client": "Developer", "rfis": 186, "subs": 129, "rsub": 16.3, "resp": 8.0, "review": 11.8, "openRFIs": 0, "risk": "medium", "year": 2017}, {"name": "Marin Training Center", "num": "24575", "studio": "Studio E", "type": "Civic", "client": "Education", "rfis": 185, "subs": 122, "rsub": 18.9, "resp": 0, "review": 0.0, "openRFIs": 6, "risk": "high", "year": 2026}, {"name": "San Francisco Fire Station", "num": "23347", "studio": "Studio D", "type": "Civic", "client": "Municipal", "rfis": 182, "subs": 177, "rsub": 20.3, "resp": 0, "review": 0.0, "openRFIs": 8, "risk": "high", "year": 2026}, {"name": "Concord Data Center", "num": "20826", "studio": "Studio C", "type": "Tech/Industrial", "client": "Tech", "rfis": 180, "subs": 176, "rsub": 9.1, "resp": 11.5, "review": 26.8, "openRFIs": 1, "risk": "medium", "year": 2026}, {"name": "South San Francisco Industrial Building", "num": "22707", "studio": "Studio D", "type": "Tech/Industrial", "client": "Commercial", "rfis": 177, "subs": 189, "rsub": 14.3, "resp": 6.5, "review": 14.8, "openRFIs": 0, "risk": "medium", "year": 2024}, {"name": "San Jose Life Sciences Campus", "num": "18863", "studio": "Studio C", "type": "Education", "client": "Education", "rfis": 175, "subs": 173, "rsub": 5.2, "resp": 9.3, "review": 24.4, "openRFIs": 0, "risk": "low", "year": 2025}, {"name": "Pleasanton Mixed-Use Development", "num": "22400", "studio": "Studio D", "type": "Residential", "client": "Developer", "rfis": 174, "subs": 134, "rsub": 13.4, "resp": 12.8, "review": 20.6, "openRFIs": 0, "risk": "medium", "year": 2017}, {"name": "Oakland Parking Structure", "num": "21216", "studio": "Studio D", "type": "Retail", "client": "Commercial", "rfis": 171, "subs": 131, "rsub": 9.9, "resp": 11.5, "review": 17.2, "openRFIs": 0, "risk": "medium", "year": 2020}, {"name": "Fremont Mixed-Use Development", "num": "24141", "studio": "Studio E", "type": "Residential", "client": "Developer", "rfis": 165, "subs": 108, "rsub": 8.3, "resp": 6.4, "review": 10.3, "openRFIs": 0, "risk": "low", "year": 2019}, {"name": "Burlingame Office Renovation", "num": "25407", "studio": "Studio E", "type": "Office", "client": "Commercial", "rfis": 163, "subs": 223, "rsub": 21.5, "resp": 4.6, "review": 14.2, "openRFIs": 0, "risk": "medium", "year": 2018}, {"name": "Napa Municipal Building", "num": "24552", "studio": "Studio E", "type": "Mixed Use", "client": "Municipal", "rfis": 158, "subs": 264, "rsub": 7.2, "resp": 6.7, "review": 13.0, "openRFIs": 0, "risk": "low", "year": 2020}, {"name": "Napa Parking Structure", "num": "24873", "studio": "Studio E", "type": "Retail", "client": "Commercial", "rfis": 157, "subs": 118, "rsub": 6.8, "resp": 8.1, "review": 15.7, "openRFIs": 0, "risk": "low", "year": 2021}, {"name": "Richmond Transit Hub Renovation", "num": "14158", "studio": "Studio A", "type": "Civic", "client": "Municipal", "rfis": 157, "subs": 238, "rsub": 8.0, "resp": 6.0, "review": 17.6, "openRFIs": 0, "risk": "low", "year": 2025}, {"name": "Marin Corporate HQ", "num": "14151", "studio": "Studio A", "type": "Office", "client": "Corporate", "rfis": 156, "subs": 133, "rsub": 9.0, "resp": 6.9, "review": 15.6, "openRFIs": 0, "risk": "low", "year": 2022}, {"name": "Palo Alto Mixed-Use Development", "num": "25894", "studio": "Studio E", "type": "Residential", "client": "Developer", "rfis": 142, "subs": 125, "rsub": 8.8, "resp": 0, "review": 0.0, "openRFIs": 0, "risk": "low", "year": 2025}, {"name": "Petaluma Life Sciences Campus", "num": "17976", "studio": "Studio B", "type": "Education", "client": "Education", "rfis": 139, "subs": 83, "rsub": 10.8, "resp": 6.3, "review": 11.3, "openRFIs": 0, "risk": "medium", "year": 2021}, {"name": "Walnut Creek Retail Center", "num": "20183", "studio": "Studio C", "type": "Retail", "client": "Commercial", "rfis": 136, "subs": 128, "rsub": 12.5, "resp": 0, "review": 0.0, "openRFIs": 0, "risk": "medium", "year": 2025}, {"name": "San Rafael Industrial Building", "num": "20863", "studio": "Studio C", "type": "Tech/Industrial", "client": "Commercial", "rfis": 134, "subs": 126, "rsub": 7.9, "resp": 6.3, "review": 12.8, "openRFIs": 0, "risk": "low", "year": 2022}, {"name": "South San Francisco Financial Services HQ", "num": "25419", "studio": "Studio E", "type": "Office", "client": "Commercial", "rfis": 129, "subs": 163, "rsub": 9.2, "resp": 5.4, "review": 12.0, "openRFIs": 0, "risk": "low", "year": 2017}, {"name": "Walnut Creek Data Center", "num": "22251", "studio": "Studio D", "type": "Tech/Industrial", "client": "Tech", "rfis": 126, "subs": 89, "rsub": 11.2, "resp": 3.9, "review": 14.5, "openRFIs": 0, "risk": "medium", "year": 2017}, {"name": "Napa Campus Building", "num": "24762", "studio": "Studio E", "type": "Education", "client": "Education", "rfis": 125, "subs": 111, "rsub": 13.5, "resp": 8.5, "review": 0.0, "openRFIs": 0, "risk": "medium", "year": 2025}, {"name": "Oakland Municipal Building", "num": "17304", "studio": "Studio B", "type": "Mixed Use", "client": "Municipal", "rfis": 118, "subs": 180, "rsub": 24.4, "resp": 4.1, "review": 13.2, "openRFIs": 0, "risk": "medium", "year": 2018}, {"name": "Daly City Fire Station", "num": "24376", "studio": "Studio E", "type": "Civic", "client": "Municipal", "rfis": 115, "subs": 74, "rsub": 9.5, "resp": 7.0, "review": 15.2, "openRFIs": 0, "risk": "low", "year": 2019}, {"name": "Santa Clara Financial Services HQ", "num": "22559", "studio": "Studio D", "type": "Office", "client": "Commercial", "rfis": 115, "subs": 103, "rsub": 12.6, "resp": 6.2, "review": 11.9, "openRFIs": 0, "risk": "medium", "year": 2016}, {"name": "Daly City Office Renovation", "num": "24858", "studio": "Studio E", "type": "Office", "client": "Commercial", "rfis": 113, "subs": 113, "rsub": 11.5, "resp": 6.2, "review": 10.7, "openRFIs": 0, "risk": "medium", "year": 2016}, {"name": "San Francisco Branch Office", "num": "14458", "studio": "Studio A", "type": "Office", "client": "Corporate", "rfis": 112, "subs": 51, "rsub": 15.7, "resp": 9.8, "review": 9.9, "openRFIs": 0, "risk": "medium", "year": 2019}, {"name": "Redwood City Data Center", "num": "14945", "studio": "Studio A", "type": "Tech/Industrial", "client": "Tech", "rfis": 110, "subs": 138, "rsub": 13.8, "resp": 0, "review": 0.0, "openRFIs": 3, "risk": "medium", "year": 2026}, {"name": "Daly City Industrial Building", "num": "23545", "studio": "Studio D", "type": "Tech/Industrial", "client": "Commercial", "rfis": 110, "subs": 147, "rsub": 22.4, "resp": 0, "review": 0.0, "openRFIs": 0, "risk": "medium", "year": 2025}, {"name": "San Jose Transit Hub Renovation", "num": "16830", "studio": "Studio B", "type": "Civic", "client": "Municipal", "rfis": 108, "subs": 207, "rsub": 14.5, "resp": 0, "review": 0.0, "openRFIs": 5, "risk": "medium", "year": 2026}, {"name": "Petaluma Financial Services HQ", "num": "19719", "studio": "Studio C", "type": "Office", "client": "Commercial", "rfis": 108, "subs": 160, "rsub": 7.5, "resp": 7.8, "review": 17.0, "openRFIs": 0, "risk": "low", "year": 2024}, {"name": "Berkeley Campus Building", "num": "17529", "studio": "Studio B", "type": "Education", "client": "Education", "rfis": 107, "subs": 209, "rsub": 21.1, "resp": 0, "review": 0.0, "openRFIs": 0, "risk": "medium", "year": 2026}, {"name": "Millbrae Branch Office", "num": "24835", "studio": "Studio E", "type": "Office", "client": "Corporate", "rfis": 103, "subs": 70, "rsub": 14.3, "resp": 10.7, "review": 18.2, "openRFIs": 0, "risk": "medium", "year": 2017}, {"name": "Emeryville Fire Station", "num": "16163", "studio": "Studio B", "type": "Civic", "client": "Municipal", "rfis": 102, "subs": 147, "rsub": 18.4, "resp": 4.1, "review": 16.6, "openRFIs": 0, "risk": "medium", "year": 2024}, {"name": "San Rafael Life Sciences Campus", "num": "21553", "studio": "Studio D", "type": "Education", "client": "Education", "rfis": 102, "subs": 522, "rsub": 6.5, "resp": 13.0, "review": 18.4, "openRFIs": 0, "risk": "medium", "year": 2020}, {"name": "San Rafael Financial Services HQ", "num": "20529", "studio": "Studio C", "type": "Office", "client": "Commercial", "rfis": 101, "subs": 76, "rsub": 10.5, "resp": 5.2, "review": 18.6, "openRFIs": 0, "risk": "medium", "year": 2024}, {"name": "Marin Office Renovation", "num": "14512", "studio": "Studio A", "type": "Office", "client": "Commercial", "rfis": 97, "subs": 91, "rsub": 1.1, "resp": 8.9, "review": 13.7, "openRFIs": 0, "risk": "low", "year": 2017}, {"name": "Millbrae Fire Station", "num": "15761", "studio": "Studio B", "type": "Civic", "client": "Municipal", "rfis": 97, "subs": 262, "rsub": 6.1, "resp": 8.2, "review": 0.0, "openRFIs": 0, "risk": "low", "year": 2025}, {"name": "Richmond Parking Structure", "num": "18357", "studio": "Studio C", "type": "Retail", "client": "Commercial", "rfis": 96, "subs": 97, "rsub": 8.2, "resp": 7.3, "review": 13.2, "openRFIs": 0, "risk": "low", "year": 2020}, {"name": "Burlingame Municipal Building", "num": "15193", "studio": "Studio B", "type": "Mixed Use", "client": "Municipal", "rfis": 95, "subs": 113, "rsub": 5.3, "resp": 7.1, "review": 14.0, "openRFIs": 0, "risk": "low", "year": 2024}, {"name": "Daly City Training Center", "num": "14246", "studio": "Studio A", "type": "Civic", "client": "Education", "rfis": 95, "subs": 69, "rsub": 17.4, "resp": 0, "review": 0.0, "openRFIs": 0, "risk": "medium", "year": 2026}, {"name": "Pleasanton Industrial Building", "num": "21629", "studio": "Studio D", "type": "Tech/Industrial", "client": "Commercial", "rfis": 95, "subs": 178, "rsub": 11.2, "resp": 5.2, "review": 12.4, "openRFIs": 0, "risk": "medium", "year": 2018}, {"name": "South San Francisco Financial Services HQ", "num": "18465", "studio": "Studio C", "type": "Office", "client": "Commercial", "rfis": 93, "subs": 58, "rsub": 3.4, "resp": 0, "review": 0.0, "openRFIs": 0, "risk": "low", "year": 2025}, {"name": "Fremont Branch Office", "num": "16497", "studio": "Studio B", "type": "Office", "client": "Corporate", "rfis": 93, "subs": 112, "rsub": 10.7, "resp": 8.9, "review": 21.0, "openRFIs": 0, "risk": "medium", "year": 2022}, {"name": "Novato Community Center", "num": "23926", "studio": "Studio D", "type": "Civic", "client": "Commercial", "rfis": 93, "subs": 60, "rsub": 8.3, "resp": 10.6, "review": 20.9, "openRFIs": 0, "risk": "medium", "year": 2017}, {"name": "Petaluma Fire Station", "num": "23389", "studio": "Studio D", "type": "Civic", "client": "Municipal", "rfis": 91, "subs": 0, "rsub": 0.0, "resp": 13.4, "review": 0.0, "openRFIs": 0, "risk": "medium", "year": 2019}, {"name": "Daly City Data Center", "num": "20697", "studio": "Studio C", "type": "Tech/Industrial", "client": "Tech", "rfis": 90, "subs": 119, "rsub": 7.6, "resp": 16.6, "review": 25.3, "openRFIs": 0, "risk": "medium", "year": 2017}, {"name": "Richmond Retail Center", "num": "15553", "studio": "Studio B", "type": "Retail", "client": "Commercial", "rfis": 89, "subs": 87, "rsub": 5.7, "resp": 8.0, "review": 22.5, "openRFIs": 0, "risk": "low", "year": 2017}, {"name": "Pleasanton Life Sciences Campus", "num": "24911", "studio": "Studio E", "type": "Education", "client": "Education", "rfis": 89, "subs": 111, "rsub": 4.5, "resp": 4.4, "review": 9.0, "openRFIs": 0, "risk": "low", "year": 2021}, {"name": "San Jose Fire Station", "num": "24276", "studio": "Studio E", "type": "Civic", "client": "Municipal", "rfis": 89, "subs": 131, "rsub": 10.7, "resp": 4.5, "review": 11.5, "openRFIs": 0, "risk": "medium", "year": 2024}, {"name": "Fremont Office Renovation", "num": "20384", "studio": "Studio C", "type": "Office", "client": "Commercial", "rfis": 86, "subs": 65, "rsub": 7.7, "resp": 5.8, "review": 12.5, "openRFIs": 0, "risk": "low", "year": 2016}, {"name": "Oakland Community Center", "num": "21812", "studio": "Studio D", "type": "Civic", "client": "Commercial", "rfis": 86, "subs": 103, "rsub": 11.7, "resp": 0, "review": 0.0, "openRFIs": 0, "risk": "medium", "year": 2025}, {"name": "Petaluma Training Center", "num": "16543", "studio": "Studio B", "type": "Civic", "client": "Education", "rfis": 82, "subs": 137, "rsub": 8.0, "resp": 0, "review": 0.0, "openRFIs": 3, "risk": "low", "year": 2026}, {"name": "Marin Transit Hub Renovation", "num": "18285", "studio": "Studio C", "type": "Civic", "client": "Municipal", "rfis": 81, "subs": 0, "rsub": 0.0, "resp": 3.8, "review": 0.0, "openRFIs": 0, "risk": "low", "year": 2019}, {"name": "Pleasanton Mixed-Use Development", "num": "19972", "studio": "Studio C", "type": "Residential", "client": "Developer", "rfis": 80, "subs": 58, "rsub": 13.8, "resp": 5.7, "review": 10.6, "openRFIs": 0, "risk": "medium", "year": 2020}];
+const STUDIOS  = [{"Studio": "Studio A", "rfis": 2533, "projects": 53, "avg_resp": 7.2, "subs": 2546, "rsub": 12.7}, {"Studio": "Studio B", "rfis": 4525, "projects": 152, "avg_resp": 6.6, "subs": 7015, "rsub": 10.6}, {"Studio": "Studio C", "rfis": 4807, "projects": 155, "avg_resp": 7.6, "subs": 6855, "rsub": 11.1}, {"Studio": "Studio D", "rfis": 4956, "projects": 165, "avg_resp": 7.3, "subs": 7708, "rsub": 10.5}, {"Studio": "Studio E", "rfis": 4797, "projects": 114, "avg_resp": 7.1, "subs": 5961, "rsub": 10.5}];
+const REVIEWERS = [{"ReviewerName": "Murphy, Jessica", "total": 2171, "rsub": 11.0, "avg_review": 13.2}, {"ReviewerName": "Morgan, Kimberly", "total": 1506, "rsub": 8.3, "avg_review": 10.9}, {"ReviewerName": "Cooper, Timothy", "total": 1501, "rsub": 9.1, "avg_review": 10.2}, {"ReviewerName": "Lewis, Amy", "total": 1191, "rsub": 6.1, "avg_review": 12.7}, {"ReviewerName": "Anderson, David", "total": 1052, "rsub": 15.2, "avg_review": 11.6}, {"ReviewerName": "Parker, Virginia", "total": 955, "rsub": 11.9, "avg_review": 19.9}, {"ReviewerName": "James, Pamela", "total": 811, "rsub": 13.8, "avg_review": 14.0}, {"ReviewerName": "Howard, Christine", "total": 582, "rsub": 13.2, "avg_review": 17.8}, {"ReviewerName": "Zhang, Michelle", "total": 530, "rsub": 12.8, "avg_review": 21.0}, {"ReviewerName": "Peterson, Christine", "total": 492, "rsub": 7.5, "avg_review": 14.3}, {"ReviewerName": "Edwards, Emma", "total": 459, "rsub": 10.5, "avg_review": 15.2}];
+const CSI_DATA  = [{"CSI": "Concrete / General", "rsub": 10.9, "vol": 19973}, {"CSI": "Other", "rsub": 11.0, "vol": 6754}, {"CSI": "General", "rsub": 10.9, "vol": 2013}, {"CSI": "Metals", "rsub": 9.3, "vol": 852}, {"CSI": "HVAC / Plumbing", "rsub": 7.9, "vol": 203}, {"CSI": "Thermal & Moisture", "rsub": 4.5, "vol": 154}, {"CSI": "Openings", "rsub": 9.7, "vol": 62}, {"CSI": "Finishes", "rsub": 9.8, "vol": 61}, {"CSI": "Electrical", "rsub": 38.5, "vol": 13}];
+const ANNUAL   = [{"year": 2018, "rfis": 2350, "subs": 2489}, {"year": 2019, "rfis": 2038, "subs": 2334}, {"year": 2020, "rfis": 1163, "subs": 2364}, {"year": 2021, "rfis": 1525, "subs": 2190}, {"year": 2022, "rfis": 1496, "subs": 1912}, {"year": 2023, "rfis": 1626, "subs": 2572}, {"year": 2024, "rfis": 2191, "subs": 3306}, {"year": 2025, "rfis": 2803, "subs": 4690}];
+const TYPE_BURDEN = [{"type": "Automotive", "total": 973.0, "rsub": 11.8, "avg_review": 12.4}, {"type": "Civic", "total": 6066.0, "rsub": 11.0, "avg_review": 15.0}, {"type": "Education", "total": 3262.0, "rsub": 10.1, "avg_review": 15.7}, {"type": "Hospitality", "total": 1256.0, "rsub": 8.0, "avg_review": 14.7}, {"type": "Mixed Use", "total": 3081.0, "rsub": 9.9, "avg_review": 12.9}, {"type": "Office", "total": 6589.0, "rsub": 11.7, "avg_review": 14.5}, {"type": "Residential", "total": 3244.0, "rsub": 11.3, "avg_review": 12.7}, {"type": "Retail", "total": 2768.0, "rsub": 9.9, "avg_review": 18.3}, {"type": "Tech/Industrial", "total": 2846.0, "rsub": 11.4, "avg_review": 13.6}];
+
+// State
+let currentStudio = null;
+let currentTypeFilter = 'all';
+let tableFilter = 'all';
+
+function filteredProjects() {
+  return currentStudio ? PROJECTS.filter(p => p.studio === currentStudio) : PROJECTS;
+}
+
+function setHier(level, val) {
+  currentStudio = (level === 'studio') ? val : null;
+  // Update sidebar
+  document.querySelectorAll('.hier-row').forEach(r => r.classList.remove('active'));
+  if (level === 'firm') {
+    document.querySelectorAll('.hier-row')[0].classList.add('active');
+  } else {
+    document.querySelectorAll('.hier-row').forEach(r => {
+      if (r.textContent.trim().startsWith(val)) r.classList.add('active');
+    });
+  }
+  // Update pills
+  document.querySelectorAll('.hier-pill').forEach(p => {
+    p.classList.remove('active');
+    if (level === 'firm' && p.dataset.level === 'firm') p.classList.add('active');
+    else if (level === 'studio' && p.dataset.val === val) p.classList.add('active');
+  });
+  // Update header
+  const fp = filteredProjects();
+  const totalRFIs = fp.reduce((s,p) => s+p.rfis, 0).toLocaleString();
+  const totalSubs = fp.reduce((s,p) => s+p.subs, 0).toLocaleString();
+  document.getElementById('pageMeta').textContent = fp.length + ' projects · ' + totalRFIs + ' RFIs · ' + totalSubs + ' submittals';
+  document.getElementById('firmChipMeta').textContent = (currentStudio || 'All studios') + (currentStudio ? '' : ' active');
+  // Re-render table
+  renderTable(tableFilter);
+  // Update studio cards
+  renderStudioCards();
+}
+
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (window.innerWidth <= 860) closeSidebar();
+}
+
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('mobileOverlay').style.display =
+    document.querySelector('.sidebar').classList.contains('open') ? 'block' : 'none';
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('mobileOverlay').style.display = 'none';
+}
+function closeDrawer() {
+  document.getElementById('drawerOverlay').style.display='none';
+  document.getElementById('drawer').style.display='none';
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeDrawer(); });
+
+function riskBadge(r) {
+  if (r==='high') return '<span class="badge badge-risk">Elevated</span>';
+  if (r==='medium') return '<span class="badge badge-warn">Monitor</span>';
+  return '<span class="badge badge-ok">On track</span>';
+}
+function rsubColor(pct) {
+  if (pct>15) return '#C0392B'; if (pct>10) return '#D4820A'; return '#2E7D4F';
+}
+
+// PROJECT TABLE
+function renderTable(filter) {
+  tableFilter = filter;
+  const projs = filteredProjects().filter(p => filter==='all' || p.type===filter);
+  const tbody = document.getElementById('projTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = projs.map(p => `
+    <tr class="clickable" onclick="openProjectDrawer('${p.name}','${p.studio}','${p.type}')">
+      <td><span class="proj-name">${p.name}</span><span class="proj-sub">${p.num}</span></td>
+      <td><span style="font-size:11px;color:var(--blue);">${p.studio}</span></td>
+      <td class="right mono">${p.rfis}</td>
+      <td class="right mono">${p.subs}</td>
+      <td class="right"><span style="font-size:12px;font-weight:500;color:${rsubColor(p.rsub)};">${p.rsub}%</span></td>
+      <td class="right mono">${p.resp > 0 ? p.resp+'d' : '—'}</td>
+      <td class="right">${riskBadge(p.risk)}</td>
+    </tr>`).join('');
+}
+
+function filterTable(type, btn) {
+  document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderTable(type);
+}
+
+renderTable('all');
+
+// STUDIO CARDS
+function renderStudioCards() {
+  const container = document.getElementById('studioCards');
+  if (!container) return;
+  container.innerHTML = STUDIOS.map(s => `
+    <div class="studio-card ${currentStudio===s.Studio?'active':''}" onclick="setHier('studio','${s.Studio}')">
+      <div class="sc-name">${s.Studio}</div>
+      <div class="sc-val">${s.rfis.toLocaleString()}</div>
+      <div class="sc-sub">${s.projects} projects · ${s.rsub}% rsub</div>
+    </div>`).join('');
+}
+renderStudioCards();
+
+// STUDIO TABLE (SkyView)
+const studioTbody = document.getElementById('studioTableBody');
+if (studioTbody) {
+  studioTbody.innerHTML = STUDIOS.map(s => {
+    const signal = s.rsub > 12 ? '<span class="badge badge-risk">Watch resubmit</span>' :
+                   s.rsub > 10 ? '<span class="badge badge-warn">Monitor</span>' :
+                   '<span class="badge badge-ok">Normal</span>';
+    return `<tr class="clickable" onclick="setHier('studio','${s.Studio}');showPanel('portfolio',document.querySelector('.nav-btn[onclick*=portfolio]'))">
+      <td><span class="proj-name">${s.Studio}</span></td>
+      <td class="right mono">${s.projects}</td>
+      <td class="right mono">${s.rfis.toLocaleString()}</td>
+      <td class="right mono">${s.subs.toLocaleString()}</td>
+      <td class="right"><span style="font-weight:500;color:${rsubColor(s.rsub)};">${s.rsub}%</span></td>
+      <td class="right mono">${s.avg_resp}d</td>
+      <td class="right">${signal}</td>
+    </tr>`;
+  }).join('');
+}
+
+// REVIEWER TABLE
+const revTbody = document.getElementById('reviewerTableBody');
+if (revTbody) {
+  revTbody.innerHTML = REVIEWERS.map(r => {
+    const rsub_c = r.rsub > 13 ? '#C0392B' : r.rsub > 10 ? '#D4820A' : '#2E7D4F';
+    const rev_c  = r.avg_review > 18 ? '#C0392B' : r.avg_review > 14 ? '#D4820A' : '#2E7D4F';
+    const signal = r.rsub > 13 ? '<span class="badge badge-risk">QA review</span>' :
+                   r.avg_review > 18 ? '<span class="badge badge-warn">Bottleneck risk</span>' :
+                   r.rsub < 8 && r.avg_review < 13 ? '<span class="badge badge-ok">Benchmark</span>' :
+                   '<span class="badge badge-gray">Normal</span>';
+    const totalMax = REVIEWERS[0].total;
+    return `<tr>
+      <td><span class="proj-name">${r.ReviewerName}</span></td>
+      <td class="right">
+        <div class="rev-bar" style="justify-content:flex-end;">
+          <span class="mono">${r.total.toLocaleString()}</span>
+          <div class="rev-track"><div class="rev-fill" style="width:${Math.round(r.total/totalMax*100)}%;background:#0098D8;"></div></div>
+        </div>
+      </td>
+      <td class="right"><span style="font-weight:500;color:${rsub_c};">${r.rsub}%</span></td>
+      <td class="right"><span style="font-weight:500;color:${rev_c};">${r.avg_review}d</span></td>
+      <td class="right">${signal}</td>
+    </tr>`;
+  }).join('');
+}
+
+// SIGNAL ROWS (correlation panel)
+function renderSignalRows() {
+  const container = document.getElementById('signalRows');
+  if (!container) return;
+  const flagged = PROJECTS.filter(p => p.risk !== 'low').slice(0, 8);
+  container.innerHTML = flagged.map(p => {
+    const badge = p.risk==='high' ? '<span class="badge badge-risk">Elevated</span>' : '<span class="badge badge-warn">Watch</span>';
+    return `<div class="signal-row clickable" onclick="openProjectDrawer('${p.name}','${p.studio}','${p.type}')">
+      <div><div class="signal-name">${p.name}</div><div class="signal-meta">Resubmit ${p.rsub}% · ${p.rfis} RFIs · ${p.studio}</div></div>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+renderSignalRows();
+
+// FEE BARS
+function renderFeeBars() {
+  const reviewContainer = document.getElementById('feeReviewBars');
+  const rsubContainer = document.getElementById('feeRsubBars');
+  if (!reviewContainer || !rsubContainer) return;
+  const sorted_review = [...TYPE_BURDEN].sort((a,b) => b.avg_review - a.avg_review);
+  const maxReview = sorted_review[0].avg_review;
+  reviewContainer.innerHTML = sorted_review.map(t => {
+    const c = t.avg_review > 16 ? '#C0392B' : t.avg_review > 14 ? '#D4820A' : '#2E7D4F';
+    return `<div class="bar-row"><div class="bar-label">${t.type}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(t.avg_review/maxReview*100)}%;background:${c};"></div></div><div class="bar-val" style="color:${c};">${t.avg_review}d</div></div>`;
+  }).join('');
+
+  const sorted_rsub = [...TYPE_BURDEN].sort((a,b) => b.rsub - a.rsub);
+  const maxRsub = sorted_rsub[0].rsub;
+  rsubContainer.innerHTML = sorted_rsub.map(t => {
+    const c = t.rsub > 11 ? '#C0392B' : t.rsub > 10 ? '#D4820A' : '#2E7D4F';
+    return `<div class="bar-row"><div class="bar-label">${t.type}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(t.rsub/maxRsub*100)}%;background:${c};"></div></div><div class="bar-val" style="color:${c};">${t.rsub}%</div></div>`;
+  }).join('');
+}
+renderFeeBars();
+
+// CSI BARS (submittals panel)
+function renderCSIBars() {
+  const container = document.getElementById('csiBarRows');
+  if (!container) return;
+  const sorted = [...CSI_DATA].sort((a,b) => b.vol - a.vol).slice(0,8);
+  const maxVol = sorted[0].vol;
+  container.innerHTML = sorted.map(c => {
+    const rc = c.rsub > 12 ? '#C0392B' : c.rsub > 9 ? '#D4820A' : '#2E7D4F';
+    const badgeCls = c.rsub > 12 ? 'badge-risk' : c.rsub > 9 ? 'badge-warn' : 'badge-ok';
+    return `<div class="bar-row"><div class="bar-label" style="width:160px;">${c.CSI}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(c.vol/maxVol*100)}%;background:#0098D8;"></div></div><div class="bar-val">${c.vol.toLocaleString()}</div><span class="bar-badge ${badgeCls}">${c.rsub}%</span></div>`;
+  }).join('');
+}
+renderCSIBars();
+
+// PROJECT DRAWER
+function openProjectDrawer(name, studio, type) {
+  const proj = PROJECTS.find(p => p.name === name) || {};
+  document.getElementById('drawerEyebrow').textContent = 'Project drill-down';
+  document.getElementById('drawerTitle').textContent = name;
+  document.getElementById('drawerSub').textContent = `${studio} · ${type} · ${proj.rfis||0} RFIs · ${proj.subs||0} submittals`;
+  const rsub_c = (proj.rsub||0) > 15 ? '#C0392B' : (proj.rsub||0) > 10 ? '#D4820A' : '#2E7D4F';
+  document.getElementById('drawerItems').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:1rem 0 1.2rem;">
+      <div style="background:#F8F8F8;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:10px;color:#9B9B9B;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">RFIs</div>
+        <div style="font-size:24px;font-weight:300;color:#1A2B3C;">${proj.rfis||0}</div>
+      </div>
+      <div style="background:#F8F8F8;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:10px;color:#9B9B9B;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Submittals</div>
+        <div style="font-size:24px;font-weight:300;color:#1A2B3C;">${proj.subs||0}</div>
+      </div>
+      <div style="background:#F8F8F8;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:10px;color:#9B9B9B;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Resubmit</div>
+        <div style="font-size:24px;font-weight:300;color:${rsub_c};">${proj.rsub||0}%</div>
+      </div>
+    </div>
+    <div class="di-signal">Avg RFI response: ${proj.resp > 0 ? proj.resp+'d' : '—'} · Avg review: ${proj.review > 0 ? proj.review+'d' : '—'} · ${proj.year||''} · Open RFIs: ${proj.openRFIs||0}</div>
+  `;
+  document.getElementById('drawerOverlay').style.display='block';
+  document.getElementById('drawer').style.display='flex';
+  document.getElementById('drawer').scrollTop=0;
+  document.body.style.overflow='hidden';
+}
+</script>
+
+<!-- CHARTS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const TEXT='#9B9B9B',GRID='rgba(0,0,0,0.05)',BLUE='#0098D8',BLUEL='#B3DFF2',GREEN='#2E7D4F',RED='#C0392B',AMBER='#D4820A',NAVY='#1A2B3C';
+const baseScale={ ticks:{color:TEXT,font:{size:11,family:"'DM Sans',sans-serif"}},grid:{color:GRID},border:{color:GRID} };
+const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:NAVY,titleColor:'#fff',bodyColor:'rgba(255,255,255,0.7)',padding:10,cornerRadius:6}},scales:{x:baseScale,y:baseScale}};
+
+// Annual chart
+new Chart(document.getElementById('annualChart'),{
+  type:'bar',
+  data:{labels:ANNUAL.map(d=>d.year.toString()),datasets:[
+    {label:'RFIs',data:ANNUAL.map(d=>d.rfis),backgroundColor:BLUE,borderRadius:4,borderSkipped:false},
+    {label:'Submittals',data:ANNUAL.map(d=>d.subs),backgroundColor:BLUEL,borderRadius:4,borderSkipped:false}
+  ]},
+  options:{...baseOpts,plugins:{...baseOpts.plugins,legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,borderRadius:2,font:{size:11},color:TEXT,padding:14}}}}
+});
+
+// RFI type chart
+const typeLabels = TYPE_BURDEN.map(t=>t.type);
+const rfiByType = [364,231,174,88,642,610,1749]; // approximate from data
+new Chart(document.getElementById('rfiTypeChart'),{
+  type:'bar',
+  data:{labels:typeLabels,datasets:[{data:TYPE_BURDEN.map(t=>t.total),backgroundColor:BLUE,borderRadius:4,borderSkipped:false}]},
+  options:{...baseOpts,scales:{x:{...baseScale,ticks:{...baseScale.ticks,maxRotation:35}},y:baseScale}}
+});
+
+// Resubmit by type chart
+new Chart(document.getElementById('rsubTypeChart'),{
+  type:'bar',
+  data:{labels:typeLabels,datasets:[{data:TYPE_BURDEN.map(t=>t.rsub),backgroundColor:TYPE_BURDEN.map(t=>t.rsub>11?RED:t.rsub>10?AMBER:GREEN),borderRadius:4,borderSkipped:false}]},
+  options:{...baseOpts,scales:{x:{...baseScale,ticks:{...baseScale.ticks,maxRotation:35}},y:{...baseScale,ticks:{...baseScale.ticks,callback:v=>v+'%'}}}}
+});
+
+// Architect action chart
+new Chart(document.getElementById('actionChart'),{
+  type:'doughnut',
+  data:{
+    labels:['Exceptions Noted','Reviewed','Revise & Resubmit','Pending','Rejected'],
+    datasets:[{data:[47.5,29.1,10.8,9.4,2.2],backgroundColor:[AMBER,GREEN,RED,'#9B9B9B',BLUE],borderWidth:0,hoverOffset:5}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{
+    legend:{display:true,position:'right',labels:{boxWidth:9,boxHeight:9,borderRadius:2,font:{size:10},color:TEXT,padding:10}},
+    tooltip:{backgroundColor:NAVY,titleColor:'#fff',bodyColor:'rgba(255,255,255,0.7)',padding:9,cornerRadius:6}
+  }}
+});
+
+// Review time by CSI
+const csiLabels = CSI_DATA.map(c=>c.CSI);
+const reviewTimes = [36.6, 24.5, 19.0, 18.8, 17.4, 15.0, 14.8, 14.6, 8.9];
+new Chart(document.getElementById('reviewTimeChart'),{
+  type:'bar',
+  data:{labels:['Thermal','Wood','Metals','Openings','Finishes','General','Existing','Concrete','HVAC'],
+    datasets:[{data:reviewTimes,backgroundColor:reviewTimes.map(v=>v>20?RED:v>15?AMBER:GREEN),borderRadius:3,borderSkipped:false}]},
+  options:{...baseOpts,scales:{x:{...baseScale,ticks:{...baseScale.ticks,maxRotation:40,font:{size:10}}},y:{...baseScale,ticks:{...baseScale.ticks,callback:v=>v+'d'}}}}
+});
+
+// Client burden chart
+new Chart(document.getElementById('clientBurdenChart'),{
+  type:'bar',
+  data:{labels:TYPE_BURDEN.sort((a,b)=>b.avg_review-a.avg_review).map(t=>t.type),
+    datasets:[{data:TYPE_BURDEN.sort((a,b)=>b.avg_review-a.avg_review).map(t=>t.avg_review),backgroundColor:BLUE,borderRadius:4,borderSkipped:false}]},
+  options:{...baseOpts,scales:{x:{...baseScale,ticks:{...baseScale.ticks,maxRotation:40}},y:{...baseScale,ticks:{...baseScale.ticks,callback:v=>v+'d'}}}}
+});
+
+// Client resubmit chart
+const sortedRsub = [...TYPE_BURDEN].sort((a,b)=>b.rsub-a.rsub);
+new Chart(document.getElementById('clientRsubChart'),{
+  type:'bar',
+  data:{labels:sortedRsub.map(t=>t.type),
+    datasets:[{data:sortedRsub.map(t=>t.rsub),backgroundColor:sortedRsub.map(t=>t.rsub>11?RED:t.rsub>10?AMBER:GREEN),borderRadius:4,borderSkipped:false}]},
+  options:{...baseOpts,scales:{x:{...baseScale,ticks:{...baseScale.ticks,maxRotation:40}},y:{...baseScale,ticks:{...baseScale.ticks,callback:v=>v+'%'}}}}
+});
+
+// RFI response by type chart
+new Chart(document.getElementById('rfiRespTypeChart'),{
+  type:'bar',
+  data:{labels:['Retail','Hospitality','Other','Civic','Office','Tech/Ind.','Education','Residential','Automotive'],
+    datasets:[{data:[9.6,9.1,8.8,8.4,8.4,7.8,7.6,6.7,6.2],backgroundColor:[RED,AMBER,AMBER,AMBER,AMBER,BLUEL,BLUEL,GREEN,GREEN],borderRadius:4,borderSkipped:false}]},
+  options:{...baseOpts,scales:{x:{...baseScale,ticks:{...baseScale.ticks,maxRotation:35}},y:{...baseScale,ticks:{...baseScale.ticks,callback:v=>v+'d'}}}}
+});
+
+// RFI annual
+new Chart(document.getElementById('rfiAnnualChart'),{
+  type:'line',
+  data:{labels:ANNUAL.map(d=>d.year.toString()),datasets:[{
+    label:'RFIs',data:ANNUAL.map(d=>d.rfis),borderColor:BLUE,backgroundColor:'rgba(0,152,216,0.08)',
+    borderWidth:2,pointBackgroundColor:BLUE,pointRadius:4,fill:true,tension:0.3
+  }]},
+  options:{...baseOpts}
+});
+
+// RFI priority by studio
+new Chart(document.getElementById('rfiPriorityChart'),{
+  type:'bar',
+  data:{
+    labels:STUDIOS.map(s=>s.Studio),
+    datasets:[
+      {label:'High priority',data:[533,996,1065,1094,1066],backgroundColor:RED,borderRadius:3,borderSkipped:false},
+      {label:'Standard',data:[1972,3473,3686,3797,3672],backgroundColor:BLUEL,borderRadius:3,borderSkipped:false},
+      {label:'Low',data:[28,56,56,65,59],backgroundColor:'#9B9B9B',borderRadius:3,borderSkipped:false}
+    ]
+  },
+  options:{...baseOpts,plugins:{...baseOpts.plugins,legend:{display:true,position:'top',align:'end',labels:{boxWidth:9,boxHeight:9,borderRadius:2,font:{size:11},color:TEXT,padding:12}}},scales:{x:baseScale,y:baseScale}}
+});
+
+// Sub:RFI ratio chart
+const ratioData = ANNUAL.map(d => d.subs > 0 && d.rfis > 0 ? parseFloat((d.subs/d.rfis).toFixed(2)) : null);
+new Chart(document.getElementById('ratioChart'),{
+  type:'line',
+  data:{labels:ANNUAL.map(d=>d.year.toString()),datasets:[
+    {label:'Sub:RFI ratio',data:ratioData,borderColor:BLUE,backgroundColor:'rgba(0,152,216,0.08)',borderWidth:2,pointBackgroundColor:BLUE,pointRadius:4,fill:true,tension:0.3},
+    {label:'Baseline (1.15)',data:ANNUAL.map(()=>1.15),borderColor:'rgba(212,130,10,0.5)',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false}
+  ]},
+  options:{...baseOpts,plugins:{...baseOpts.plugins,legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,boxHeight:2,borderRadius:2,font:{size:11},color:TEXT,padding:14}}},scales:{x:baseScale,y:{...baseScale,ticks:{...baseScale.ticks,callback:v=>v.toFixed(2)+':1'}}}}
+});
+
+// Reviewer volume chart
+new Chart(document.getElementById('reviewerVolChart'),{
+  type:'bar',
+  data:{
+    labels:REVIEWERS.map(r=>r.ReviewerName.split(',')[0]),
+    datasets:[{data:REVIEWERS.map(r=>r.total),backgroundColor:BLUE,borderRadius:4,borderSkipped:false}]
+  },
+  options:{...baseOpts,indexAxis:'y',scales:{x:baseScale,y:{...baseScale,ticks:{...baseScale.ticks,font:{size:11}}}}}
+});
+
+// Reviewer scatter
+new Chart(document.getElementById('reviewerScatterChart'),{
+  type:'scatter',
+  data:{datasets:[{
+    data:REVIEWERS.map(r=>({x:r.avg_review, y:r.rsub, label:r.ReviewerName.split(',')[0]})),
+    backgroundColor:REVIEWERS.map(r=>r.rsub>13?RED:r.avg_review>18?AMBER:GREEN),
+    pointRadius:7,pointHoverRadius:9
+  }]},
+  options:{...baseOpts,plugins:{...baseOpts.plugins,
+    tooltip:{callbacks:{label:ctx=>`${ctx.raw.label}: ${ctx.raw.x}d avg / ${ctx.raw.y}% rsub`}}},
+    scales:{
+      x:{...baseScale,title:{display:true,text:'Avg review time (days)',color:TEXT,font:{size:11}}},
+      y:{...baseScale,title:{display:true,text:'Resubmit rate (%)',color:TEXT,font:{size:11}}}
+    }
+  }
+});
+</script>
+</body>
+</html>

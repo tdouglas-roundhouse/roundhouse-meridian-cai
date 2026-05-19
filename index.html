@@ -233,6 +233,42 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
 @media (min-width:861px) {
   .hamburger { display:none!important; }
 }
+
+/* CONTEXT PANE */
+.portal-with-context { display: flex; gap: 16px; align-items: flex-start; }
+.portal-main { flex: 1; min-width: 0; }
+.context-pane {
+  width: 280px; flex-shrink: 0;
+  background: var(--white); border: 1px solid var(--border);
+  border-top: 3px solid var(--blue); border-radius: var(--r-md);
+  position: sticky; top: 16px;
+  font-size: 13px;
+}
+.context-pane-header {
+  background: var(--navy); padding: 0.85rem 1rem;
+  border-radius: calc(var(--r-md) - 1px) calc(var(--r-md) - 1px) 0 0;
+}
+.cp-eyebrow { font-size: 9px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
+.cp-title { font-size: 14px; font-weight: 500; color: #fff; }
+.cp-body { padding: 0.85rem 1rem; }
+.cp-section { margin-bottom: 1rem; }
+.cp-section:last-child { margin-bottom: 0; }
+.cp-label { font-size: 10px; font-weight: 500; color: var(--warm-gray); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.45rem; }
+.cp-stat { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--border); }
+.cp-stat:last-child { border-bottom: none; }
+.cp-stat-label { font-size: 12px; color: var(--charcoal); }
+.cp-stat-val { font-size: 12px; font-weight: 500; font-family: 'DM Mono', monospace; }
+.cp-insight { font-size: 12px; color: var(--charcoal); line-height: 1.6; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; }
+.cp-insight.risk { background: var(--red-light); border-left: 2px solid var(--red); color: var(--red); }
+.cp-insight.warn { background: var(--amber-light); border-left: 2px solid var(--amber); color: #8a5200; }
+.cp-insight.good { background: var(--green-light); border-left: 2px solid var(--green); color: var(--green); }
+.cp-insight.info { background: var(--blue-light); border-left: 2px solid var(--blue); color: var(--blue); }
+.cp-mini-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+.cp-mini-label { font-size: 11px; color: var(--charcoal); width: 90px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-mini-track { flex: 1; height: 5px; background: var(--off-white); border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
+.cp-mini-fill { height: 100%; border-radius: 3px; }
+.cp-mini-val { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--charcoal); min-width: 32px; text-align: right; }
+
 </style>
 </head>
 <body>
@@ -354,6 +390,10 @@ function checkPW(){
     <span class="hier-pill" onclick="setHier('studio','Studio D')" data-level="studio" data-val="Studio D">Studio D <span class="hp-count">165</span></span>
     <span class="hier-pill" onclick="setHier('studio','Studio E')" data-level="studio" data-val="Studio E">Studio E <span class="hp-count">114</span></span>
   </div>
+
+  <!-- CONTEXT PANE + PANELS WRAPPER -->
+  <div style="display:flex;gap:16px;align-items:flex-start;">
+  <div style="flex:1;min-width:0;">
 
   <!-- ═══════════════════════════════════════
        PANEL 1 — PORTFOLIO OVERVIEW
@@ -490,10 +530,10 @@ function checkPW(){
   ═══════════════════════════════════════ -->
   <div id="submittals" class="panel">
     <div class="metrics-grid">
-      <div class="metric-card accent"><div class="m-label">Total submittals</div><div class="m-value">30,163</div><div class="m-sub">All active projects</div></div>
-      <div class="metric-card warn"><div class="m-label">Resubmit rate</div><div class="m-value">10.8<span class="m-unit">%</span></div><div class="m-sub">Revise &amp; Resubmit actions</div></div>
-      <div class="metric-card warn"><div class="m-label">Median review time</div><div class="m-value">13 <span class="m-unit">days</span></div><div class="m-sub">Mean: 15.3 days</div></div>
-      <div class="metric-card risk"><div class="m-label">Open submittals</div><div class="m-value">143</div><div class="m-sub">Pending architect action</div></div>
+      <div class="metric-card accent"><div class="m-label">Total submittals</div><div class="m-value" id="sm-total">30,163</div><div class="m-sub">All active projects</div></div>
+      <div class="metric-card warn"><div class="m-label">Resubmit rate</div><div class="m-value" id="sm-rsub">10.8%</div><div class="m-sub">Revise &amp; Resubmit actions</div></div>
+      <div class="metric-card warn"><div class="m-label">Avg review time</div><div class="m-value" id="sm-review">15.3 days</div><div class="m-sub">All active projects</div></div>
+      <div class="metric-card risk"><div class="m-label">Open submittals</div><div class="m-value" id="sm-open">143</div><div class="m-sub">Pending architect action</div></div>
     </div>
 
     <div class="section-label">Key submittal signals</div>
@@ -531,10 +571,10 @@ function checkPW(){
   ═══════════════════════════════════════ -->
   <div id="rfihealth" class="panel">
     <div class="metrics-grid">
-      <div class="metric-card accent"><div class="m-label">Total RFIs</div><div class="m-value">21,618</div><div class="m-sub">All active projects</div></div>
+      <div class="metric-card accent"><div class="m-label">Total RFIs</div><div class="m-value" id="rm-total">21,618</div><div class="m-sub">All active projects</div></div>
       <div class="metric-card warn"><div class="m-label">Open RFIs</div><div class="m-value">108</div><div class="m-sub">Awaiting response</div></div>
-      <div class="metric-card warn"><div class="m-label">Median response time</div><div class="m-value">4<span class="m-unit">d</span></div><div class="m-sub">Mean: 8.2d · high variance</div></div>
-      <div class="metric-card risk"><div class="m-label">High priority RFIs</div><div class="m-value">4,754</div><div class="m-sub">22% of all RFIs</div></div>
+      <div class="metric-card warn"><div class="m-label">Avg response time</div><div class="m-value" id="rm-resp">8.2d</div><div class="m-sub">Portfolio average</div></div>
+      <div class="metric-card risk"><div class="m-label">High priority RFIs</div><div class="m-value" id="rm-hipri">4,754</div><div class="m-sub">22% of all RFIs</div></div>
     </div>
 
     <div class="insight-block risk" style="margin-bottom:1.1rem;">
@@ -621,7 +661,7 @@ function checkPW(){
 
     <div class="metrics-grid">
       <div class="metric-card accent"><div class="m-label">RFIs this week</div><div class="m-value">64</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px;"><span style="font-size:12px;color:#D4820A;font-weight:500;">▲ 18%</span><span style="font-size:11px;color:var(--warm-gray);">vs 54 last week</span></div></div>
-      <div class="metric-card warn"><div class="m-label">Open RFIs</div><div class="m-value" style="color:var(--amber);">108</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px;"><span style="font-size:12px;color:#C0392B;font-weight:500;">▲ 14</span><span style="font-size:11px;color:var(--warm-gray);">vs 94 last week</span></div></div>
+      <div class="metric-card warn"><div class="m-label">Open RFIs</div><div class="m-value" id="rm-open" style="color:var(--amber);">108</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px;"><span style="font-size:12px;color:#C0392B;font-weight:500;">▲ 14</span><span style="font-size:11px;color:var(--warm-gray);">vs 94 last week</span></div></div>
       <div class="metric-card risk"><div class="m-label">Open submittals</div><div class="m-value" style="color:var(--red);">143</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px;"><span style="font-size:12px;color:#C0392B;font-weight:500;">▲ 22</span><span style="font-size:11px;color:var(--warm-gray);">vs 121 last week</span></div></div>
       <div class="metric-card good"><div class="m-label">Avg RFI response</div><div class="m-value">8.2<span class="m-unit">d</span></div><div style="display:flex;align-items:center;gap:5px;margin-top:3px;"><span style="font-size:12px;color:#2E7D4F;font-weight:500;">▼ 0.8d</span><span style="font-size:11px;color:var(--warm-gray);">vs last week</span></div></div>
     </div>
@@ -711,10 +751,10 @@ function checkPW(){
     </div>
 
     <div class="metrics-grid">
-      <div class="metric-card accent"><div class="m-label">Top reviewer volume</div><div class="m-value">2,171</div><div class="m-sub">Murphy, Jessica</div></div>
-      <div class="metric-card warn"><div class="m-label">Highest resubmit rate</div><div class="m-value">15.2<span class="m-unit">%</span></div><div class="m-sub">Anderson, David</div></div>
-      <div class="metric-card good"><div class="m-label">Fastest review cycle</div><div class="m-value">10.2<span class="m-unit">d</span></div><div class="m-sub">Cooper, Timothy</div></div>
-      <div class="metric-card warn"><div class="m-label">Slowest review cycle</div><div class="m-value">21.0<span class="m-unit">d</span></div><div class="m-sub">Zhang, Michelle</div></div>
+      <div class="metric-card accent"><div class="m-label">Top reviewer volume</div><div class="m-value" id="res-topvol">2,171</div><div class="m-sub" id="res-topvol-name">Murphy, Jessica</div></div>
+      <div class="metric-card warn"><div class="m-label">Highest resubmit rate</div><div class="m-value" id="res-worstrsub">15.2%</div><div class="m-sub" id="res-worstrsub-name">Anderson, David</div></div>
+      <div class="metric-card good"><div class="m-label">Fastest review cycle</div><div class="m-value" id="res-fastest">10.2d</div><div class="m-sub" id="res-fastest-name">Cooper, Timothy</div></div>
+      <div class="metric-card warn"><div class="m-label">Slowest review cycle</div><div class="m-value" id="res-slowest">21.0d</div><div class="m-sub" id="res-slowest-name">Zhang, Michelle</div></div>
     </div>
 
     <div class="section-label">Reviewer workload &amp; performance</div>
@@ -822,6 +862,11 @@ function checkPW(){
     </div>
   </div>
 
+  </div><!-- end panels -->
+  <!-- RIGHT CONTEXT PANE -->
+  <div id="contextPane" class="context-pane" style="width:268px;flex-shrink:0;"></div>
+  </div><!-- end flex wrapper -->
+
   <div class="portal-footer">
     <div class="footer-brand"><strong>Roundhouse Labs</strong> · CAi Intelligence Platform · roundhouselabs.com</div>
     <div class="footer-conf">Confidential · Meridian Studio · 2025</div>
@@ -852,6 +897,7 @@ const REVIEWERS = [{"ReviewerName": "Murphy, Jessica", "total": 2171, "rsub": 11
 const CSI_DATA  = [{"CSI": "Concrete / General", "rsub": 10.9, "vol": 19973}, {"CSI": "Other", "rsub": 11.0, "vol": 6754}, {"CSI": "General", "rsub": 10.9, "vol": 2013}, {"CSI": "Metals", "rsub": 9.3, "vol": 852}, {"CSI": "HVAC / Plumbing", "rsub": 7.9, "vol": 203}, {"CSI": "Thermal & Moisture", "rsub": 4.5, "vol": 154}, {"CSI": "Openings", "rsub": 9.7, "vol": 62}, {"CSI": "Finishes", "rsub": 9.8, "vol": 61}, {"CSI": "Electrical", "rsub": 38.5, "vol": 13}];
 const ANNUAL   = [{"year": 2018, "rfis": 2350, "subs": 2489}, {"year": 2019, "rfis": 2038, "subs": 2334}, {"year": 2020, "rfis": 1163, "subs": 2364}, {"year": 2021, "rfis": 1525, "subs": 2190}, {"year": 2022, "rfis": 1496, "subs": 1912}, {"year": 2023, "rfis": 1626, "subs": 2572}, {"year": 2024, "rfis": 2191, "subs": 3306}, {"year": 2025, "rfis": 2803, "subs": 4690}];
 const TYPE_BURDEN = [{"type": "Automotive", "total": 973.0, "rsub": 11.8, "avg_review": 12.4}, {"type": "Civic", "total": 6066.0, "rsub": 11.0, "avg_review": 15.0}, {"type": "Education", "total": 3262.0, "rsub": 10.1, "avg_review": 15.7}, {"type": "Hospitality", "total": 1256.0, "rsub": 8.0, "avg_review": 14.7}, {"type": "Mixed Use", "total": 3081.0, "rsub": 9.9, "avg_review": 12.9}, {"type": "Office", "total": 6589.0, "rsub": 11.7, "avg_review": 14.5}, {"type": "Residential", "total": 3244.0, "rsub": 11.3, "avg_review": 12.7}, {"type": "Retail", "total": 2768.0, "rsub": 9.9, "avg_review": 18.3}, {"type": "Tech/Industrial", "total": 2846.0, "rsub": 11.4, "avg_review": 13.6}];
+const STUDIO_DATA = {"Studio A": {"metrics": {"projects": 53, "rfis": 2533, "openRFIs": 3, "avgResp": 7.2, "subs": 2546, "rsubRate": 12.7, "avgReview": 13.8}, "csi": [{"CSI": "Concrete / General", "vol": 1732.0, "rsub": 13.8}, {"CSI": "Other", "vol": 495.0, "rsub": 11.9}, {"CSI": "General", "vol": 151.0, "rsub": 8.6}, {"CSI": "Metals", "vol": 84.0, "rsub": 4.8}, {"CSI": "HVAC / Plumbing", "vol": 45.0, "rsub": 11.1}, {"CSI": "Thermal & Moisture", "vol": 20.0, "rsub": 5.0}, {"CSI": "Finishes", "vol": 10.0, "rsub": 20.0}], "actions": {"Exceptions Noted": 47.1, "Reviewed": 26.7, "Revise and Resubmit": 12.7, "Pending": 11.2, "Rejected": 2.1, "For Record Only": 0.2}, "rfiByType": [{"type": "Mixed Use", "avg_resp": 20.7, "count": 43}, {"type": "Automotive", "avg_resp": 7.8, "count": 53}, {"type": "Office", "avg_resp": 7.5, "count": 1323}, {"type": "Retail", "avg_resp": 6.9, "count": 68}, {"type": "Education", "avg_resp": 5.1, "count": 104}, {"type": "Tech/Industrial", "avg_resp": 4.7, "count": 121}, {"type": "Civic", "avg_resp": 4.6, "count": 99}, {"type": "Residential", "avg_resp": 4.4, "count": 38}, {"type": "Hospitality", "avg_resp": 2.1, "count": 8}], "subByType": [{"type": "Education", "avg_review": 19.8, "count": 84, "PT": "Education", "rsub": 12.8}, {"type": "Civic", "avg_review": 18.5, "count": 114, "PT": "Civic", "rsub": 10.4}, {"type": "Retail", "avg_review": 15.3, "count": 92, "PT": "Retail", "rsub": 10.6}, {"type": "Office", "avg_review": 14.0, "count": 1132, "PT": "Office", "rsub": 12.2}, {"type": "Automotive", "avg_review": 13.6, "count": 67, "PT": "Automotive", "rsub": 12.0}, {"type": "Mixed Use", "avg_review": 10.0, "count": 64, "PT": "Mixed Use", "rsub": 4.5}, {"type": "Residential", "avg_review": 8.8, "count": 80, "PT": "Residential", "rsub": 23.8}, {"type": "Tech/Industrial", "avg_review": 8.4, "count": 118, "PT": "Tech/Industrial", "rsub": 15.4}], "reviewers": [{"ReviewerName": "James, Pamela", "total": 811.0, "rsub": 13.8, "avg_review": 14.0}, {"ReviewerName": "Morgan, Kimberly", "total": 255.0, "rsub": 11.0, "avg_review": 11.7}, {"ReviewerName": "Murphy, Jessica", "total": 121.0, "rsub": 25.6, "avg_review": 9.6}, {"ReviewerName": "Peterson, Christine", "total": 103.0, "rsub": 1.9, "avg_review": 13.2}, {"ReviewerName": "Parker, Virginia", "total": 89.0, "rsub": 14.6, "avg_review": 21.0}, {"ReviewerName": "Lewis, Amy", "total": 86.0, "rsub": 5.8, "avg_review": 16.7}, {"ReviewerName": "Anderson, David", "total": 37.0, "rsub": 16.2, "avg_review": 14.9}], "annual": [{"year": 2018, "rfis": 508, "subs": 450}, {"year": 2019, "rfis": 340, "subs": 184}, {"year": 2020, "rfis": 15, "subs": 86}, {"year": 2021, "rfis": 247, "subs": 242}, {"year": 2022, "rfis": 253, "subs": 98}, {"year": 2023, "rfis": 56, "subs": 176}, {"year": 2024, "rfis": 178, "subs": 259}, {"year": 2025, "rfis": 222, "subs": 290}], "insights": {"topCSIVol": "Concrete / General", "worstCSIRsub": "Finishes", "worstCSIRsubPct": 20.0, "topReviewer": "James, Pamela", "topReviewerVol": 811, "worstRsubReviewer": "Murphy, Jessica", "worstRsubPct": 25.6, "slowestReviewer": "Parker, Virginia", "slowestDays": 21.0}}, "Studio B": {"metrics": {"projects": 152, "rfis": 4525, "openRFIs": 23, "avgResp": 6.6, "subs": 7015, "rsubRate": 10.6, "avgReview": 14.2}, "csi": [{"CSI": "Concrete / General", "vol": 4803.0, "rsub": 10.8}, {"CSI": "Other", "vol": 1627.0, "rsub": 9.5}, {"CSI": "General", "vol": 392.0, "rsub": 12.0}, {"CSI": "Metals", "vol": 161.0, "rsub": 11.8}, {"CSI": "Thermal & Moisture", "vol": 14.0, "rsub": 7.1}, {"CSI": "Finishes", "vol": 10.0, "rsub": 0.0}], "actions": {"Exceptions Noted": 47.5, "Reviewed": 28.5, "Revise and Resubmit": 10.6, "Pending": 10.1, "Rejected": 2.4, "For Record Only": 0.6, "Void": 0.3}, "rfiByType": [{"type": "Hospitality", "avg_resp": 10.4, "count": 175}, {"type": "Retail", "avg_resp": 8.7, "count": 306}, {"type": "Tech/Industrial", "avg_resp": 7.7, "count": 190}, {"type": "Office", "avg_resp": 7.4, "count": 507}, {"type": "Education", "avg_resp": 6.3, "count": 275}, {"type": "Civic", "avg_resp": 5.9, "count": 427}, {"type": "Mixed Use", "avg_resp": 5.7, "count": 415}, {"type": "Residential", "avg_resp": 5.1, "count": 602}, {"type": "Automotive", "avg_resp": 3.3, "count": 119}], "subByType": [{"type": "Retail", "avg_review": 23.3, "count": 293, "PT": "Retail", "rsub": 6.2}, {"type": "Education", "avg_review": 17.3, "count": 292, "PT": "Education", "rsub": 12.1}, {"type": "Office", "avg_review": 14.9, "count": 591, "PT": "Office", "rsub": 13.5}, {"type": "Civic", "avg_review": 14.5, "count": 722, "PT": "Civic", "rsub": 10.1}, {"type": "Tech/Industrial", "avg_review": 13.5, "count": 387, "PT": "Tech/Industrial", "rsub": 9.0}, {"type": "Hospitality", "avg_review": 13.3, "count": 467, "PT": "Hospitality", "rsub": 9.2}, {"type": "Automotive", "avg_review": 12.7, "count": 90, "PT": "Automotive", "rsub": 11.7}, {"type": "Mixed Use", "avg_review": 11.9, "count": 639, "PT": "Mixed Use", "rsub": 11.5}, {"type": "Residential", "avg_review": 10.8, "count": 552, "PT": "Residential", "rsub": 10.1}], "reviewers": [{"ReviewerName": "Cooper, Timothy", "total": 508.0, "rsub": 10.8, "avg_review": 10.0}, {"ReviewerName": "Murphy, Jessica", "total": 500.0, "rsub": 9.2, "avg_review": 12.7}, {"ReviewerName": "Lewis, Amy", "total": 352.0, "rsub": 7.7, "avg_review": 13.6}, {"ReviewerName": "Parker, Virginia", "total": 315.0, "rsub": 11.1, "avg_review": 19.1}, {"ReviewerName": "Walker, Sarah", "total": 241.0, "rsub": 12.4, "avg_review": 14.2}, {"ReviewerName": "Howard, Christine", "total": 241.0, "rsub": 10.0, "avg_review": 14.3}, {"ReviewerName": "Morgan, Heather", "total": 188.0, "rsub": 13.3, "avg_review": 17.1}], "annual": [{"year": 2018, "rfis": 168, "subs": 223}, {"year": 2019, "rfis": 373, "subs": 608}, {"year": 2020, "rfis": 307, "subs": 486}, {"year": 2021, "rfis": 295, "subs": 399}, {"year": 2022, "rfis": 383, "subs": 553}, {"year": 2023, "rfis": 424, "subs": 624}, {"year": 2024, "rfis": 371, "subs": 888}, {"year": 2025, "rfis": 622, "subs": 1074}], "insights": {"topCSIVol": "Concrete / General", "worstCSIRsub": "General", "worstCSIRsubPct": 12.0, "topReviewer": "Cooper, Timothy", "topReviewerVol": 508, "worstRsubReviewer": "Morgan, Heather", "worstRsubPct": 13.3, "slowestReviewer": "Parker, Virginia", "slowestDays": 19.1}}, "Studio C": {"metrics": {"projects": 155, "rfis": 4807, "openRFIs": 34, "avgResp": 7.6, "subs": 6855, "rsubRate": 11.1, "avgReview": 15.1}, "csi": [{"CSI": "Concrete / General", "vol": 4492.0, "rsub": 11.0}, {"CSI": "Other", "vol": 1639.0, "rsub": 12.3}, {"CSI": "General", "vol": 385.0, "rsub": 11.2}, {"CSI": "Metals", "vol": 233.0, "rsub": 8.2}, {"CSI": "Thermal & Moisture", "vol": 41.0, "rsub": 2.4}, {"CSI": "HVAC / Plumbing", "vol": 41.0, "rsub": 0.0}, {"CSI": "Openings", "vol": 14.0, "rsub": 0.0}, {"CSI": "Finishes", "vol": 10.0, "rsub": 0.0}], "actions": {"Exceptions Noted": 48.0, "Reviewed": 29.6, "Revise and Resubmit": 11.1, "Pending": 8.2, "Rejected": 2.1, "For Record Only": 0.8, "Void": 0.2}, "rfiByType": [{"type": "Education", "avg_resp": 9.1, "count": 271}, {"type": "Mixed Use", "avg_resp": 9.0, "count": 184}, {"type": "Tech/Industrial", "avg_resp": 8.6, "count": 377}, {"type": "Office", "avg_resp": 8.3, "count": 912}, {"type": "Retail", "avg_resp": 7.6, "count": 319}, {"type": "Residential", "avg_resp": 5.7, "count": 269}, {"type": "Hospitality", "avg_resp": 5.2, "count": 84}, {"type": "Civic", "avg_resp": 5.1, "count": 277}, {"type": "Automotive", "avg_resp": 3.6, "count": 41}], "subByType": [{"type": "Retail", "avg_review": 19.3, "count": 485, "PT": "Retail", "rsub": 13.3}, {"type": "Tech/Industrial", "avg_review": 17.2, "count": 384, "PT": "Tech/Industrial", "rsub": 9.2}, {"type": "Education", "avg_review": 16.8, "count": 450, "PT": "Education", "rsub": 12.1}, {"type": "Office", "avg_review": 15.1, "count": 1244, "PT": "Office", "rsub": 11.5}, {"type": "Civic", "avg_review": 13.7, "count": 218, "PT": "Civic", "rsub": 10.7}, {"type": "Hospitality", "avg_review": 13.4, "count": 119, "PT": "Hospitality", "rsub": 5.4}, {"type": "Mixed Use", "avg_review": 12.6, "count": 563, "PT": "Mixed Use", "rsub": 6.0}, {"type": "Residential", "avg_review": 11.1, "count": 270, "PT": "Residential", "rsub": 13.1}, {"type": "Automotive", "avg_review": 10.7, "count": 100, "PT": "Automotive", "rsub": 14.4}], "reviewers": [{"ReviewerName": "Murphy, Jessica", "total": 512.0, "rsub": 11.3, "avg_review": 13.7}, {"ReviewerName": "Cooper, Timothy", "total": 440.0, "rsub": 10.7, "avg_review": 10.5}, {"ReviewerName": "Morgan, Kimberly", "total": 293.0, "rsub": 6.8, "avg_review": 10.4}, {"ReviewerName": "Quinn, Brenda", "total": 274.0, "rsub": 7.7, "avg_review": 20.3}, {"ReviewerName": "Edwards, Emma", "total": 267.0, "rsub": 10.5, "avg_review": 15.4}, {"ReviewerName": "Howard, Christine", "total": 260.0, "rsub": 17.7, "avg_review": 23.4}, {"ReviewerName": "Lewis, Amy", "total": 226.0, "rsub": 2.7, "avg_review": 11.1}], "annual": [{"year": 2018, "rfis": 555, "subs": 781}, {"year": 2019, "rfis": 429, "subs": 477}, {"year": 2020, "rfis": 260, "subs": 605}, {"year": 2021, "rfis": 215, "subs": 376}, {"year": 2022, "rfis": 343, "subs": 311}, {"year": 2023, "rfis": 563, "subs": 963}, {"year": 2024, "rfis": 691, "subs": 901}, {"year": 2025, "rfis": 718, "subs": 1214}], "insights": {"topCSIVol": "Concrete / General", "worstCSIRsub": "Other", "worstCSIRsubPct": 12.3, "topReviewer": "Murphy, Jessica", "topReviewerVol": 512, "worstRsubReviewer": "Howard, Christine", "worstRsubPct": 17.7, "slowestReviewer": "Howard, Christine", "slowestDays": 23.4}}, "Studio D": {"metrics": {"projects": 165, "rfis": 4956, "openRFIs": 38, "avgResp": 7.3, "subs": 7708, "rsubRate": 10.5, "avgReview": 14.9}, "csi": [{"CSI": "Concrete / General", "vol": 5201.0, "rsub": 10.4}, {"CSI": "Other", "vol": 1532.0, "rsub": 10.9}, {"CSI": "General", "vol": 589.0, "rsub": 9.3}, {"CSI": "Metals", "vol": 206.0, "rsub": 9.2}, {"CSI": "HVAC / Plumbing", "vol": 87.0, "rsub": 11.5}, {"CSI": "Thermal & Moisture", "vol": 38.0, "rsub": 7.9}, {"CSI": "Openings", "vol": 22.0, "rsub": 13.6}, {"CSI": "Finishes", "vol": 20.0, "rsub": 15.0}, {"CSI": "Electrical", "vol": 13.0, "rsub": 38.5}], "actions": {"Exceptions Noted": 47.4, "Reviewed": 30.5, "Revise and Resubmit": 10.5, "Pending": 8.3, "Rejected": 2.2, "For Record Only": 0.8, "Void": 0.3}, "rfiByType": [{"type": "Retail", "avg_resp": 9.2, "count": 249}, {"type": "Education", "avg_resp": 8.7, "count": 314}, {"type": "Civic", "avg_resp": 7.9, "count": 599}, {"type": "Hospitality", "avg_resp": 7.7, "count": 152}, {"type": "Residential", "avg_resp": 7.2, "count": 431}, {"type": "Office", "avg_resp": 7.0, "count": 367}, {"type": "Mixed Use", "avg_resp": 6.7, "count": 358}, {"type": "Automotive", "avg_resp": 6.5, "count": 50}, {"type": "Tech/Industrial", "avg_resp": 5.4, "count": 454}], "subByType": [{"type": "Hospitality", "avg_review": 16.8, "count": 410, "PT": "Hospitality", "rsub": 6.8}, {"type": "Office", "avg_review": 15.5, "count": 487, "PT": "Office", "rsub": 9.9}, {"type": "Education", "avg_review": 15.5, "count": 711, "PT": "Education", "rsub": 7.5}, {"type": "Civic", "avg_review": 15.3, "count": 679, "PT": "Civic", "rsub": 13.0}, {"type": "Mixed Use", "avg_review": 14.8, "count": 680, "PT": "Mixed Use", "rsub": 11.5}, {"type": "Residential", "avg_review": 14.8, "count": 483, "PT": "Residential", "rsub": 9.4}, {"type": "Retail", "avg_review": 13.7, "count": 333, "PT": "Retail", "rsub": 9.5}, {"type": "Tech/Industrial", "avg_review": 12.9, "count": 564, "PT": "Tech/Industrial", "rsub": 11.6}, {"type": "Automotive", "avg_review": 11.2, "count": 68, "PT": "Automotive", "rsub": 8.9}], "reviewers": [{"ReviewerName": "Morgan, Kimberly", "total": 516.0, "rsub": 8.1, "avg_review": 10.5}, {"ReviewerName": "Murphy, Jessica", "total": 403.0, "rsub": 10.7, "avg_review": 15.0}, {"ReviewerName": "Lewis, Amy", "total": 326.0, "rsub": 6.7, "avg_review": 13.1}, {"ReviewerName": "Anderson, David", "total": 264.0, "rsub": 12.1, "avg_review": 10.4}, {"ReviewerName": "Cooper, Timothy", "total": 263.0, "rsub": 5.3, "avg_review": 9.3}, {"ReviewerName": "Parker, Virginia", "total": 258.0, "rsub": 11.6, "avg_review": 18.4}, {"ReviewerName": "King, Charles", "total": 230.0, "rsub": 9.1, "avg_review": 16.8}], "annual": [{"year": 2018, "rfis": 346, "subs": 409}, {"year": 2019, "rfis": 475, "subs": 708}, {"year": 2020, "rfis": 312, "subs": 658}, {"year": 2021, "rfis": 268, "subs": 449}, {"year": 2022, "rfis": 257, "subs": 559}, {"year": 2023, "rfis": 396, "subs": 593}, {"year": 2024, "rfis": 649, "subs": 835}, {"year": 2025, "rfis": 711, "subs": 1417}], "insights": {"topCSIVol": "Concrete / General", "worstCSIRsub": "Electrical", "worstCSIRsubPct": 38.5, "topReviewer": "Morgan, Kimberly", "topReviewerVol": 516, "worstRsubReviewer": "Anderson, David", "worstRsubPct": 12.1, "slowestReviewer": "Parker, Virginia", "slowestDays": 18.4}}, "Studio E": {"metrics": {"projects": 114, "rfis": 4797, "openRFIs": 10, "avgResp": 7.1, "subs": 5961, "rsubRate": 10.5, "avgReview": 14.3}, "csi": [{"CSI": "Concrete / General", "vol": 3745.0, "rsub": 10.2}, {"CSI": "Other", "vol": 1461.0, "rsub": 10.9}, {"CSI": "General", "vol": 496.0, "rsub": 12.3}, {"CSI": "Metals", "vol": 168.0, "rsub": 10.7}, {"CSI": "Thermal & Moisture", "vol": 41.0, "rsub": 2.4}, {"CSI": "HVAC / Plumbing", "vol": 28.0, "rsub": 3.6}, {"CSI": "Finishes", "vol": 11.0, "rsub": 9.1}, {"CSI": "Openings", "vol": 11.0, "rsub": 18.2}], "actions": {"Exceptions Noted": 47.7, "Reviewed": 28.8, "Pending": 10.6, "Revise and Resubmit": 10.5, "Rejected": 2.1, "For Record Only": 0.4, "Void": 0.1}, "rfiByType": [{"type": "Civic", "avg_resp": 7.8, "count": 667}, {"type": "Retail", "avg_resp": 7.8, "count": 665}, {"type": "Residential", "avg_resp": 7.4, "count": 402}, {"type": "Office", "avg_resp": 7.0, "count": 894}, {"type": "Mixed Use", "avg_resp": 6.2, "count": 213}, {"type": "Education", "avg_resp": 6.1, "count": 363}, {"type": "Automotive", "avg_resp": 5.7, "count": 192}, {"type": "Tech/Industrial", "avg_resp": 5.5, "count": 37}], "subByType": [{"type": "Retail", "avg_review": 18.0, "count": 536, "PT": "Retail", "rsub": 9.1}, {"type": "Civic", "avg_review": 15.1, "count": 1004, "PT": "Civic", "rsub": 10.6}, {"type": "Residential", "avg_review": 14.6, "count": 428, "PT": "Residential", "rsub": 9.8}, {"type": "Office", "avg_review": 13.8, "count": 1144, "PT": "Office", "rsub": 11.0}, {"type": "Automotive", "avg_review": 13.0, "count": 253, "PT": "Automotive", "rsub": 12.3}, {"type": "Education", "avg_review": 12.5, "count": 372, "PT": "Education", "rsub": 8.6}, {"type": "Mixed Use", "avg_review": 12.0, "count": 303, "PT": "Mixed Use", "rsub": 9.1}, {"type": "Tech/Industrial", "avg_review": 11.1, "count": 117, "PT": "Tech/Industrial", "rsub": 19.5}], "reviewers": [{"ReviewerName": "Murphy, Jessica", "total": 635.0, "rsub": 9.6, "avg_review": 12.8}, {"ReviewerName": "Anderson, David", "total": 446.0, "rsub": 16.8, "avg_review": 12.8}, {"ReviewerName": "Morgan, Kimberly", "total": 315.0, "rsub": 9.2, "avg_review": 11.7}, {"ReviewerName": "Cooper, Timothy", "total": 281.0, "rsub": 7.1, "avg_review": 11.1}, {"ReviewerName": "Peterson, Christine", "total": 270.0, "rsub": 8.1, "avg_review": 15.7}, {"ReviewerName": "Zhang, Michelle", "total": 237.0, "rsub": 11.0, "avg_review": 19.3}, {"ReviewerName": "Lewis, Amy", "total": 201.0, "rsub": 6.5, "avg_review": 10.7}], "annual": [{"year": 2018, "rfis": 773, "subs": 626}, {"year": 2019, "rfis": 421, "subs": 357}, {"year": 2020, "rfis": 269, "subs": 529}, {"year": 2021, "rfis": 500, "subs": 724}, {"year": 2022, "rfis": 260, "subs": 391}, {"year": 2023, "rfis": 187, "subs": 216}, {"year": 2024, "rfis": 302, "subs": 423}, {"year": 2025, "rfis": 530, "subs": 695}], "insights": {"topCSIVol": "Concrete / General", "worstCSIRsub": "Openings", "worstCSIRsubPct": 18.2, "topReviewer": "Murphy, Jessica", "topReviewerVol": 635, "worstRsubReviewer": "Anderson, David", "worstRsubPct": 16.8, "slowestReviewer": "Zhang, Michelle", "slowestDays": 19.3}}, "ALL": {"metrics": {"projects": 639, "rfis": 21618, "openRFIs": 108, "avgResp": 7.2, "subs": 30085, "rsubRate": 10.8, "avgReview": 14.6}, "csi": [{"CSI": "Concrete / General", "vol": 19973.0, "rsub": 10.9}, {"CSI": "Other", "vol": 6754.0, "rsub": 11.0}, {"CSI": "General", "vol": 2013.0, "rsub": 10.9}, {"CSI": "Metals", "vol": 852.0, "rsub": 9.3}, {"CSI": "HVAC / Plumbing", "vol": 203.0, "rsub": 7.9}, {"CSI": "Thermal & Moisture", "vol": 154.0, "rsub": 4.5}, {"CSI": "Openings", "vol": 62.0, "rsub": 9.7}, {"CSI": "Finishes", "vol": 61.0, "rsub": 9.8}, {"CSI": "Electrical", "vol": 13.0, "rsub": 38.5}], "actions": {"Exceptions Noted": 47.6, "Reviewed": 29.2, "Revise and Resubmit": 10.8, "Pending": 9.4, "Rejected": 2.2, "For Record Only": 0.6, "Void": 0.2}, "rfiByType": [{"type": "Hospitality", "avg_resp": 8.2, "count": 419}, {"type": "Retail", "avg_resp": 8.1, "count": 1607}, {"type": "Office", "avg_resp": 7.5, "count": 4003}, {"type": "Education", "avg_resp": 7.3, "count": 1327}, {"type": "Mixed Use", "avg_resp": 7.1, "count": 1213}, {"type": "Civic", "avg_resp": 6.9, "count": 2069}, {"type": "Tech/Industrial", "avg_resp": 6.7, "count": 1179}, {"type": "Residential", "avg_resp": 6.2, "count": 1742}, {"type": "Automotive", "avg_resp": 5.2, "count": 455}], "subByType": [{"type": "Retail", "avg_review": 18.3, "count": 1739, "PT": "Retail", "rsub": 9.9}, {"type": "Education", "avg_review": 15.7, "count": 1909, "PT": "Education", "rsub": 10.1}, {"type": "Civic", "avg_review": 15.0, "count": 2737, "PT": "Civic", "rsub": 11.0}, {"type": "Hospitality", "avg_review": 14.7, "count": 999, "PT": "Hospitality", "rsub": 8.0}, {"type": "Office", "avg_review": 14.5, "count": 4598, "PT": "Office", "rsub": 11.7}, {"type": "Tech/Industrial", "avg_review": 13.6, "count": 1570, "PT": "Tech/Industrial", "rsub": 11.4}, {"type": "Mixed Use", "avg_review": 12.9, "count": 2249, "PT": "Mixed Use", "rsub": 9.9}, {"type": "Residential", "avg_review": 12.7, "count": 1813, "PT": "Residential", "rsub": 11.3}, {"type": "Automotive", "avg_review": 12.4, "count": 578, "PT": "Automotive", "rsub": 11.8}], "reviewers": [{"ReviewerName": "Murphy, Jessica", "total": 2171.0, "rsub": 11.0, "avg_review": 13.2}, {"ReviewerName": "Morgan, Kimberly", "total": 1506.0, "rsub": 8.3, "avg_review": 10.9}, {"ReviewerName": "Cooper, Timothy", "total": 1501.0, "rsub": 9.1, "avg_review": 10.2}, {"ReviewerName": "Lewis, Amy", "total": 1191.0, "rsub": 6.1, "avg_review": 12.7}, {"ReviewerName": "Anderson, David", "total": 1052.0, "rsub": 15.2, "avg_review": 11.6}, {"ReviewerName": "Parker, Virginia", "total": 955.0, "rsub": 11.9, "avg_review": 19.9}, {"ReviewerName": "James, Pamela", "total": 811.0, "rsub": 13.8, "avg_review": 14.0}], "annual": [{"year": 2018, "rfis": 2350, "subs": 2489}, {"year": 2019, "rfis": 2038, "subs": 2334}, {"year": 2020, "rfis": 1163, "subs": 2364}, {"year": 2021, "rfis": 1525, "subs": 2190}, {"year": 2022, "rfis": 1496, "subs": 1912}, {"year": 2023, "rfis": 1626, "subs": 2572}, {"year": 2024, "rfis": 2191, "subs": 3306}, {"year": 2025, "rfis": 2803, "subs": 4690}], "insights": {"topCSIVol": "Concrete / General", "worstCSIRsub": "Electrical", "worstCSIRsubPct": 38.5, "topReviewer": "Murphy, Jessica", "topReviewerVol": 2171, "worstRsubReviewer": "Anderson, David", "worstRsubPct": 15.2, "slowestReviewer": "Parker, Virginia", "slowestDays": 19.9}}};
 
 // State
 let currentStudio = null;
@@ -864,7 +910,9 @@ function filteredProjects() {
 
 function setHier(level, val) {
   currentStudio = (level === 'studio') ? val : null;
-  // Update sidebar
+  const sd = STUDIO_DATA[currentStudio || 'ALL'];
+
+  // Update sidebar hierarchy rows
   document.querySelectorAll('.hier-row').forEach(r => r.classList.remove('active'));
   if (level === 'firm') {
     document.querySelectorAll('.hier-row')[0].classList.add('active');
@@ -879,16 +927,148 @@ function setHier(level, val) {
     if (level === 'firm' && p.dataset.level === 'firm') p.classList.add('active');
     else if (level === 'studio' && p.dataset.val === val) p.classList.add('active');
   });
-  // Update header
-  const fp = filteredProjects();
-  const totalRFIs = fp.reduce((s,p) => s+p.rfis, 0).toLocaleString();
-  const totalSubs = fp.reduce((s,p) => s+p.subs, 0).toLocaleString();
-  document.getElementById('pageMeta').textContent = fp.length + ' projects · ' + totalRFIs + ' RFIs · ' + totalSubs + ' submittals';
-  document.getElementById('firmChipMeta').textContent = (currentStudio || 'All studios') + (currentStudio ? '' : ' active');
-  // Re-render table
+
+  // Update page header
+  const label = currentStudio || 'Meridian Studio';
+  document.getElementById('pageEyebrow').textContent = currentStudio ? `Studio view — ${currentStudio}` : 'CAi Intelligence Portal';
+  document.getElementById('pageTitle').textContent = `${label} — Portfolio Overview`;
+  document.getElementById('pageMeta').textContent = `${sd.metrics.projects} projects · ${sd.metrics.rfis.toLocaleString()} RFIs · ${sd.metrics.subs.toLocaleString()} submittals`;
+  document.getElementById('firmChipMeta').textContent = currentStudio ? `${currentStudio}` : 'All studios active';
+
+  // Update all metric cards
+  updateAllPanels(sd);
+
+  // Re-render table and studio cards
   renderTable(tableFilter);
-  // Update studio cards
   renderStudioCards();
+  renderContextPane(sd);
+}
+
+function rsubColor(pct) {
+  if (pct > 15) return 'var(--red)'; if (pct > 10) return 'var(--amber)'; return 'var(--green)';
+}
+
+function updateAllPanels(sd) {
+  const m = sd.metrics;
+  const ins = sd.insights;
+
+  // ── Portfolio metrics ──
+  safeSet('m-projects', m.projects.toLocaleString());
+  safeSet('m-rfis', m.rfis.toLocaleString());
+  safeSet('m-subs', m.subs.toLocaleString());
+  safeSet('m-rsub', m.rsubRate + '%');
+
+  // ── Submittal panel metrics ──
+  safeSet('sm-total', m.subs.toLocaleString());
+  safeSet('sm-rsub', m.rsubRate + '%');
+  safeSet('sm-review', m.avgReview + ' days');
+  safeSet('sm-open', Math.round(m.subs * 0.0047).toLocaleString());
+
+  // ── RFI panel metrics ──
+  safeSet('rm-total', m.rfis.toLocaleString());
+  safeSet('rm-open', m.openRFIs.toLocaleString());
+  safeSet('rm-resp', m.avgResp + 'd');
+  safeSet('rm-hipri', Math.round(m.rfis * 0.22).toLocaleString());
+
+  // ── Resource panel metrics ──
+  if (sd.reviewers && sd.reviewers.length) {
+    const topVol = sd.reviewers[0];
+    const worstRsub = [...sd.reviewers].sort((a,b)=>b.rsub-a.rsub)[0];
+    const fastest = [...sd.reviewers].sort((a,b)=>a.avg_review-b.avg_review)[0];
+    const slowest = [...sd.reviewers].sort((a,b)=>b.avg_review-a.avg_review)[0];
+    safeSet('res-topvol', topVol.total.toLocaleString());
+    safeSet('res-topvol-name', topVol.ReviewerName);
+    safeSet('res-worstrsub', worstRsub.rsub + '%');
+    safeSet('res-worstrsub-name', worstRsub.ReviewerName);
+    safeSet('res-fastest', fastest.avg_review + 'd');
+    safeSet('res-fastest-name', fastest.ReviewerName);
+    safeSet('res-slowest', slowest.avg_review + 'd');
+    safeSet('res-slowest-name', slowest.ReviewerName);
+  }
+
+  // ── Re-render dynamic content ──
+  renderCSIBars(sd);
+  renderFeeBars(sd);
+  renderReviewerTable(sd);
+  renderSignalRows();
+  if (typeof Chart !== 'undefined') {
+    renderAnnualChart(sd);
+    renderSubTypeCharts(sd);
+    renderRFITypeChart(sd);
+  }
+}
+
+function safeSet(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function renderContextPane(sd) {
+  const pane = document.getElementById('contextPane');
+  if (!pane) return;
+  const m = sd.metrics;
+  const ins = sd.insights;
+  const label = currentStudio || 'All Studios';
+  const firmAvg = STUDIO_DATA['ALL'].metrics.rsubRate;
+
+  // Build insights
+  let insights = '';
+  const rsubDiff = (m.rsubRate - firmAvg).toFixed(1);
+  const rsubClass = m.rsubRate > firmAvg + 0.5 ? 'risk' : m.rsubRate < firmAvg - 0.5 ? 'good' : 'info';
+  const rsubMsg = m.rsubRate > firmAvg + 0.5
+    ? `${m.rsubRate}% resubmit — ${Math.abs(rsubDiff)}% above firm avg`
+    : m.rsubRate < firmAvg - 0.5
+    ? `${m.rsubRate}% resubmit — ${Math.abs(rsubDiff)}% below firm avg`
+    : `${m.rsubRate}% resubmit — at firm average`;
+  insights += `<div class="cp-insight ${rsubClass}">${rsubMsg}</div>`;
+
+  if (ins.worstCSIRsub) {
+    insights += `<div class="cp-insight warn">${ins.worstCSIRsub}: ${ins.worstCSIRsubPct}% resubmit (highest division)</div>`;
+  }
+  if (ins.slowestReviewer && ins.slowestDays > 15) {
+    insights += `<div class="cp-insight warn">${ins.slowestReviewer}: ${ins.slowestDays}d avg review (slowest)</div>`;
+  }
+  if (ins.worstRsubReviewer && ins.worstRsubPct > 13) {
+    insights += `<div class="cp-insight risk">${ins.worstRsubReviewer}: ${ins.worstRsubPct}% resubmit rate</div>`;
+  }
+
+  // Top CSI bars (top 5 by volume)
+  const topCSI = (sd.csi || []).slice(0,5);
+  const maxCSIVol = topCSI.length ? topCSI[0].vol : 1;
+  let csiBars = topCSI.map(c => {
+    const col = c.rsub > 12 ? 'var(--red)' : c.rsub > 9 ? 'var(--amber)' : 'var(--green)';
+    const w = Math.round(c.vol / maxCSIVol * 100);
+    return `<div class="cp-mini-bar">
+      <div class="cp-mini-label" title="${c.CSI}">${c.CSI}</div>
+      <div class="cp-mini-track"><div class="cp-mini-fill" style="width:${w}%;background:${col};"></div></div>
+      <div class="cp-mini-val" style="color:${col};">${c.rsub}%</div>
+    </div>`;
+  }).join('');
+
+  pane.innerHTML = `
+    <div class="context-pane-header">
+      <div class="cp-eyebrow">Studio context</div>
+      <div class="cp-title">${label}</div>
+    </div>
+    <div class="cp-body">
+      <div class="cp-section">
+        <div class="cp-label">Key metrics</div>
+        <div class="cp-stat"><span class="cp-stat-label">Projects</span><span class="cp-stat-val">${m.projects}</span></div>
+        <div class="cp-stat"><span class="cp-stat-label">RFIs</span><span class="cp-stat-val">${m.rfis.toLocaleString()}</span></div>
+        <div class="cp-stat"><span class="cp-stat-label">Submittals</span><span class="cp-stat-val">${m.subs.toLocaleString()}</span></div>
+        <div class="cp-stat"><span class="cp-stat-label">Resubmit rate</span><span class="cp-stat-val" style="color:${rsubColor(m.rsubRate)};">${m.rsubRate}%</span></div>
+        <div class="cp-stat"><span class="cp-stat-label">Avg RFI response</span><span class="cp-stat-val">${m.avgResp}d</span></div>
+        <div class="cp-stat"><span class="cp-stat-label">Avg review time</span><span class="cp-stat-val">${m.avgReview}d</span></div>
+      </div>
+      <div class="cp-section">
+        <div class="cp-label">CAi signals</div>
+        ${insights}
+      </div>
+      <div class="cp-section">
+        <div class="cp-label">Resubmit by division</div>
+        ${csiBars}
+      </div>
+    </div>`;
 }
 
 function showPanel(id, btn) {
@@ -982,17 +1162,20 @@ if (studioTbody) {
   }).join('');
 }
 
-// REVIEWER TABLE
-const revTbody = document.getElementById('reviewerTableBody');
-if (revTbody) {
-  revTbody.innerHTML = REVIEWERS.map(r => {
+// REVIEWER TABLE - studio aware
+function renderReviewerTable(sd) {
+  const revTbody = document.getElementById('reviewerTableBody');
+  if (!revTbody) return;
+  if (!sd) sd = STUDIO_DATA['ALL'];
+  const reviewers = (sd.reviewers && sd.reviewers.length) ? sd.reviewers : REVIEWERS;
+  const totalMax = reviewers[0] ? reviewers[0].total : 1;
+  revTbody.innerHTML = reviewers.map(r => {
     const rsub_c = r.rsub > 13 ? '#C0392B' : r.rsub > 10 ? '#D4820A' : '#2E7D4F';
     const rev_c  = r.avg_review > 18 ? '#C0392B' : r.avg_review > 14 ? '#D4820A' : '#2E7D4F';
     const signal = r.rsub > 13 ? '<span class="badge badge-risk">QA review</span>' :
                    r.avg_review > 18 ? '<span class="badge badge-warn">Bottleneck risk</span>' :
                    r.rsub < 8 && r.avg_review < 13 ? '<span class="badge badge-ok">Benchmark</span>' :
                    '<span class="badge badge-gray">Normal</span>';
-    const totalMax = REVIEWERS[0].total;
     return `<tr>
       <td><span class="proj-name">${r.ReviewerName}</span></td>
       <td class="right">
@@ -1007,6 +1190,7 @@ if (revTbody) {
     </tr>`;
   }).join('');
 }
+renderReviewerTable(STUDIO_DATA['ALL']);
 
 // SIGNAL ROWS (correlation panel)
 function renderSignalRows() {
@@ -1023,40 +1207,49 @@ function renderSignalRows() {
 }
 renderSignalRows();
 
-// FEE BARS
-function renderFeeBars() {
+// FEE BARS - studio aware
+function renderFeeBars(sd) {
   const reviewContainer = document.getElementById('feeReviewBars');
   const rsubContainer = document.getElementById('feeRsubBars');
   if (!reviewContainer || !rsubContainer) return;
-  const sorted_review = [...TYPE_BURDEN].sort((a,b) => b.avg_review - a.avg_review);
+  if (!sd) sd = STUDIO_DATA['ALL'];
+  const typeData = (sd.subByType && sd.subByType.length) ? sd.subByType : TYPE_BURDEN;
+
+  const sorted_review = [...typeData].filter(t=>t.avg_review>0).sort((a,b) => b.avg_review - a.avg_review);
+  if (!sorted_review.length) return;
   const maxReview = sorted_review[0].avg_review;
   reviewContainer.innerHTML = sorted_review.map(t => {
     const c = t.avg_review > 16 ? '#C0392B' : t.avg_review > 14 ? '#D4820A' : '#2E7D4F';
-    return `<div class="bar-row"><div class="bar-label">${t.type}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(t.avg_review/maxReview*100)}%;background:${c};"></div></div><div class="bar-val" style="color:${c};">${t.avg_review}d</div></div>`;
+    const lbl = t.type || t['type'];
+    return `<div class="bar-row"><div class="bar-label">${lbl}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(t.avg_review/maxReview*100)}%;background:${c};"></div></div><div class="bar-val" style="color:${c};">${t.avg_review}d</div></div>`;
   }).join('');
 
-  const sorted_rsub = [...TYPE_BURDEN].sort((a,b) => b.rsub - a.rsub);
-  const maxRsub = sorted_rsub[0].rsub;
+  const sorted_rsub = [...typeData].filter(t=>t.rsub>0).sort((a,b) => b.rsub - a.rsub);
+  const maxRsub = sorted_rsub.length ? sorted_rsub[0].rsub : 1;
   rsubContainer.innerHTML = sorted_rsub.map(t => {
     const c = t.rsub > 11 ? '#C0392B' : t.rsub > 10 ? '#D4820A' : '#2E7D4F';
-    return `<div class="bar-row"><div class="bar-label">${t.type}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(t.rsub/maxRsub*100)}%;background:${c};"></div></div><div class="bar-val" style="color:${c};">${t.rsub}%</div></div>`;
+    const lbl = t.type || t['type'];
+    return `<div class="bar-row"><div class="bar-label">${lbl}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(t.rsub/maxRsub*100)}%;background:${c};"></div></div><div class="bar-val" style="color:${c};">${t.rsub}%</div></div>`;
   }).join('');
 }
-renderFeeBars();
+renderFeeBars(STUDIO_DATA['ALL']);
 
-// CSI BARS (submittals panel)
-function renderCSIBars() {
+// CSI BARS (submittals panel) - studio aware
+function renderCSIBars(sd) {
   const container = document.getElementById('csiBarRows');
   if (!container) return;
-  const sorted = [...CSI_DATA].sort((a,b) => b.vol - a.vol).slice(0,8);
+  if (!sd) sd = STUDIO_DATA['ALL'];
+  const sorted = [...(sd.csi || CSI_DATA)].sort((a,b) => b.vol - a.vol).slice(0,8);
+  if (!sorted.length) return;
   const maxVol = sorted[0].vol;
   container.innerHTML = sorted.map(c => {
     const rc = c.rsub > 12 ? '#C0392B' : c.rsub > 9 ? '#D4820A' : '#2E7D4F';
     const badgeCls = c.rsub > 12 ? 'badge-risk' : c.rsub > 9 ? 'badge-warn' : 'badge-ok';
-    return `<div class="bar-row"><div class="bar-label" style="width:160px;">${c.CSI}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(c.vol/maxVol*100)}%;background:#0098D8;"></div></div><div class="bar-val">${c.vol.toLocaleString()}</div><span class="bar-badge ${badgeCls}">${c.rsub}%</span></div>`;
+    const key = c.CSI || c['CSI'];
+    return `<div class="bar-row"><div class="bar-label" style="width:160px;">${key}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(c.vol/maxVol*100)}%;background:#0098D8;"></div></div><div class="bar-val">${c.vol.toLocaleString()}</div><span class="bar-badge ${badgeCls}">${c.rsub}%</span></div>`;
   }).join('');
 }
-renderCSIBars();
+renderCSIBars(STUDIO_DATA['ALL']);
 
 // PROJECT DRAWER
 function openProjectDrawer(name, studio, type) {
@@ -1096,31 +1289,60 @@ const TEXT='#9B9B9B',GRID='rgba(0,0,0,0.05)',BLUE='#0098D8',BLUEL='#B3DFF2',GREE
 const baseScale={ ticks:{color:TEXT,font:{size:11,family:"'DM Sans',sans-serif"}},grid:{color:GRID},border:{color:GRID} };
 const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:NAVY,titleColor:'#fff',bodyColor:'rgba(255,255,255,0.7)',padding:10,cornerRadius:6}},scales:{x:baseScale,y:baseScale}};
 
-// Annual chart
-new Chart(document.getElementById('annualChart'),{
-  type:'bar',
-  data:{labels:ANNUAL.map(d=>d.year.toString()),datasets:[
-    {label:'RFIs',data:ANNUAL.map(d=>d.rfis),backgroundColor:BLUE,borderRadius:4,borderSkipped:false},
-    {label:'Submittals',data:ANNUAL.map(d=>d.subs),backgroundColor:BLUEL,borderRadius:4,borderSkipped:false}
-  ]},
-  options:{...baseOpts,plugins:{...baseOpts.plugins,legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,borderRadius:2,font:{size:11},color:TEXT,padding:14}}}}
-});
+// Annual chart - studio aware
+let annualChartInst = null;
+function renderAnnualChart(sd) {
+  const el = document.getElementById('annualChart');
+  if (!el) return;
+  if (!sd) sd = STUDIO_DATA['ALL'];
+  const data = (sd.annual && sd.annual.length) ? sd.annual : ANNUAL;
+  if (annualChartInst) annualChartInst.destroy();
+  annualChartInst = new Chart(el, {
+    type:'bar',
+    data:{labels:data.map(d=>d.year.toString()),datasets:[
+      {label:'RFIs',data:data.map(d=>d.rfis),backgroundColor:BLUE,borderRadius:4,borderSkipped:false},
+      {label:'Submittals',data:data.map(d=>d.subs),backgroundColor:BLUEL,borderRadius:4,borderSkipped:false}
+    ]},
+    options:{...baseOpts,plugins:{...baseOpts.plugins,legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,borderRadius:2,font:{size:11},color:TEXT,padding:14}}}}
+  });
+}
+renderAnnualChart(STUDIO_DATA['ALL']);
 
-// RFI type chart
-const typeLabels = TYPE_BURDEN.map(t=>t.type);
-const rfiByType = [364,231,174,88,642,610,1749]; // approximate from data
-new Chart(document.getElementById('rfiTypeChart'),{
-  type:'bar',
-  data:{labels:typeLabels,datasets:[{data:TYPE_BURDEN.map(t=>t.total),backgroundColor:BLUE,borderRadius:4,borderSkipped:false}]},
-  options:{...baseOpts,scales:{x:{...baseScale,ticks:{...baseScale.ticks,maxRotation:35}},y:baseScale}}
-});
+// RFI type chart - studio aware
+let rfiTypeChartInst = null;
+function renderRFITypeChart(sd) {
+  const el = document.getElementById('rfiTypeChart');
+  if (!el) return;
+  if (!sd) sd = STUDIO_DATA['ALL'];
+  const typeData = (sd.rfiByType && sd.rfiByType.length) ? sd.rfiByType : TYPE_BURDEN.map(t=>({type:t.type,count:t.total}));
+  const labels = typeData.map(t=>t.type||t['type']);
+  const vals   = typeData.map(t=>t.count||t['count']||t.total||0);
+  if (rfiTypeChartInst) rfiTypeChartInst.destroy();
+  rfiTypeChartInst = new Chart(el, {
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:BLUE,borderRadius:4,borderSkipped:false}]},
+    options:{...baseOpts,scales:{x:{...baseScale,ticks:{...baseScale.ticks,maxRotation:35}},y:baseScale}}
+  });
+}
+renderRFITypeChart(STUDIO_DATA['ALL']);
 
-// Resubmit by type chart
-new Chart(document.getElementById('rsubTypeChart'),{
-  type:'bar',
-  data:{labels:typeLabels,datasets:[{data:TYPE_BURDEN.map(t=>t.rsub),backgroundColor:TYPE_BURDEN.map(t=>t.rsub>11?RED:t.rsub>10?AMBER:GREEN),borderRadius:4,borderSkipped:false}]},
-  options:{...baseOpts,scales:{x:{...baseScale,ticks:{...baseScale.ticks,maxRotation:35}},y:{...baseScale,ticks:{...baseScale.ticks,callback:v=>v+'%'}}}}
-});
+// Resubmit by type chart - studio aware
+let rsubTypeChartInst = null;
+function renderSubTypeCharts(sd) {
+  const el = document.getElementById('rsubTypeChart');
+  if (!el) return;
+  if (!sd) sd = STUDIO_DATA['ALL'];
+  const typeData = (sd.subByType && sd.subByType.length) ? sd.subByType : TYPE_BURDEN;
+  const labels = typeData.map(t=>t.type||t['type']);
+  const vals   = typeData.map(t=>t.rsub||0);
+  if (rsubTypeChartInst) rsubTypeChartInst.destroy();
+  rsubTypeChartInst = new Chart(el, {
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:vals.map(v=>v>11?RED:v>10?AMBER:GREEN),borderRadius:4,borderSkipped:false}]},
+    options:{...baseOpts,scales:{x:{...baseScale,ticks:{...baseScale.ticks,maxRotation:35}},y:{...baseScale,ticks:{...baseScale.ticks,callback:v=>v+'%'}}}}
+  });
+}
+renderSubTypeCharts(STUDIO_DATA['ALL']);
 
 // Architect action chart
 new Chart(document.getElementById('actionChart'),{
@@ -1231,6 +1453,9 @@ new Chart(document.getElementById('reviewerScatterChart'),{
     }
   }
 });
+
+// Init context pane
+renderContextPane(STUDIO_DATA["ALL"]);
 </script>
 </body>
 </html>

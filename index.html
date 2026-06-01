@@ -273,35 +273,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
 </head>
 <body>
 
-<!-- PW GATE -->
-<div id="pw-gate">
-  <div style="margin-bottom:0.3rem;">
-    <img src="./Roundhouse_Logo.png" style="width:180px;height:auto;display:block;" alt="Roundhouse">
-  </div>
-  <div class="pw-sub">CAi Portal</div>
-  <div class="pw-box">
-    <div class="pw-label">Access password</div>
-    <input class="pw-input" id="pwInput" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPW()">
-    <button class="pw-btn" onclick="checkPW()">Enter</button>
-    <div class="pw-error" id="pwError"></div>
-  </div>
-</div>
-<script>
-(function(){
-  if(sessionStorage.getItem('rh_cai_auth')==='Roundhouse-CAeye!')
-    document.getElementById('pw-gate').classList.add('hidden');
-})();
-function checkPW(){
-  if(document.getElementById('pwInput').value==='Roundhouse-CAeye!'){
-    sessionStorage.setItem('rh_cai_auth','Roundhouse-CAeye!');
-    document.getElementById('pw-gate').classList.add('hidden');
-  }else{
-    document.getElementById('pwError').textContent='Incorrect password.';
-    document.getElementById('pwInput').value='';
-    document.getElementById('pwInput').focus();
-  }
-}
-</script>
 
 <div class="layout">
 <div class="mobile-overlay" id="mobileOverlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:99;"></div>

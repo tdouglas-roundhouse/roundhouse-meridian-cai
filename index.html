@@ -235,6 +235,7 @@ table.t td.n{font-weight:700;color:var(--navy)}
     <button class="nav-btn" data-view="open"><span class="dot"></span>Open and past due</button>
     <button class="nav-btn" data-view="rfi"><span class="dot"></span>RFI health</button>
     <button class="nav-btn" data-view="sub"><span class="dot"></span>Submittal health</button>
+    <button class="nav-btn" data-view="div"><span class="dot"></span>Division health</button>
     <div class="r-label">Performance</div>
     <button class="nav-btn" data-view="sky"><span class="dot"></span>SkyView</button>
     <button class="nav-btn" data-view="signal"><span class="dot"></span>Signal</button>
@@ -1064,6 +1065,47 @@ V.sub = c => {
   mkChart("cSubRev",{type:"bar",data:{labels:g.map(x=>x.k),datasets:[{label:"Median days",data:g.map(x=>x.sm.medRev),backgroundColor:ragColors(g.map(x=>x.sm.medRev),c.base.medRev)}]},options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{grid:{color:"#EEF0F2"}},y:{grid:{display:false}}}}});
 };
 
+/* ---- Division health ---- */
+V.div = c => {
+  const roll=S2=>Object.values(RH.groupBy(S2,s=>s.divisionName)).map(v=>({k:v[0].divisionName,n:v.length,S:v,sm:RH.subMetrics(v,c.asOf)})).sort((a,b)=>b.n-a.n);
+  const dvP=roll(c.Sb), dvA=roll(c.Sall);
+  const lead=dvP[0]||null;
+  const hiRes=dvP.filter(d=>d.sm.acted>=15).sort((a,b)=>(b.sm.resub||0)-(a.sm.resub||0))[0]||null;
+  const slow=dvP.filter(d=>d.sm.revN>=8).sort((a,b)=>(b.sm.medRev||0)-(a.sm.medRev||0))[0]||null;
+  const totN=Math.max(1,c.sm.n); const top3=dvP.slice(0,3);
+  const top3N=top3.reduce((a,d)=>a+d.n,0);
+  // Heatmap: top 12 divisions all-time, by year
+  const years=[...new Set(c.Sall.filter(s=>s.date).map(s=>s.date.getFullYear()))].sort();
+  const hm=dvA.slice(0,12).map(d=>{ const by={}; d.S.forEach(s=>{ if(s.date){ const y=s.date.getFullYear(); by[y]=(by[y]||0)+1; } }); return {k:d.k,by}; });
+  const hmMax=Math.max(1,...hm.flatMap(r=>years.map(y=>r.by[y]||0)));
+  const cell=v=>{ const a=v? (0.12+0.88*(v/hmMax)) : 0; return `<td style="text-align:center;padding:6px 4px;font-size:11.5px;border-radius:4px;background:${v?`rgba(0,152,216,${a.toFixed(2)})`:"#F4F6F8"};color:${a>0.55?"#fff":"#4A4A4A"}">${v||""}</td>`; };
+  const heat = years.length? `<div style="overflow-x:auto"><table style="width:100%;border-collapse:separate;border-spacing:3px"><thead><tr><th style="text-align:left;font-size:11px;color:var(--gray);font-weight:700;padding:4px">Division</th>${years.map(y=>`<th style="font-size:11px;color:var(--gray);font-weight:700;padding:4px">${y}</th>`).join("")}</tr></thead><tbody>${hm.map(r=>`<tr><td style="font-size:12px;padding:4px;white-space:nowrap">${esc(r.k.length>22?r.k.slice(0,21)+"…":r.k)}</td>${years.map(y=>cell(r.by[y]||0)).join("")}</tr>`).join("")}</tbody></table></div>` : `<div class="empty">No dated submittals in this scope.</div>`;
+  const tblRows=dvP.filter(d=>d.n>=5).map(d=>({...d,sig:signalFor({pastDue:0,medResp:null,respN:0,highShare:null,n:0},d.sm,c.base)}));
+  const chartRows=dvP.slice(0,14);
+  $("view").innerHTML=`
+  <div class="memo"><div class="m-e">Division health</div><div class="m-t">Submittal workload by spec division</div><div class="m-s">Where review effort concentrates in ${esc(scopeLabel())}, and which divisions come back for a second pass. Click a row to see its items.</div></div>
+  <div class="grid g4">
+    ${metricCard({label:"Divisions active",value:fmtN(dvP.length),sub:"with submittals in period"})}
+    ${metricCard({label:"Highest volume",value:lead?lead.k:"–",unit:lead?fmtN(lead.n):"",sub:lead?fmtP(lead.n/totN)+" of period volume":""})}
+    ${metricCard({label:"Highest resubmit",value:hiRes?hiRes.k:"–",unit:hiRes?fmtP(hiRes.sm.resub):"",sub:`baseline ${fmtP(c.base.resub)}`,state:"warn"})}
+    ${metricCard({label:"Longest review",value:slow?slow.k:"–",unit:slow?fmtD(slow.sm.medRev,0)+"d":"",sub:`baseline ${fmtD(c.base.medRev,0)}d median`,state:"warn"})}
+  </div>
+  ${caiRead([
+    (hiRes&&c.base.resub? (()=>{ const vb=vsBase(hiRes.sm.resub,c.base.resub,{n:hiRes.sm.acted,minN:15}); return {title:`${esc(hiRes.k)} carries the highest resubmit rate at ${fmtP(hiRes.sm.resub)}`, body:`That is ${vb?vb.dir:"vs"} the ${fmtP(c.base.resub)} baseline across ${fmtN(hiRes.sm.acted)} reviewed submittals. Each revise and resubmit is a second review cycle the fee did not plan for.${hiRes.sm.acted<25?caveat(hiRes.sm.acted,"reviewed submittals"):""}`, level:vb?vb.level:"warn", w:3}; })():null),
+    (top3.length===3? {title:"", body:`${esc(top3[0].k)}, ${esc(top3[1].k)}, and ${esc(top3[2].k)} account for ${fmtP(top3N/totN)} of period volume. Staffing and spec attention concentrated there covers most of the review load.`, w:2}:null),
+    (slow&&c.base.medRev&&slow.sm.medRev>c.base.medRev*1.2? {title:"", body:`${esc(slow.k)} runs the longest review cycle at a ${fmtD(slow.sm.medRev,0)} day median against ${fmtD(c.base.medRev,0)} firm wide.`, w:1.5, level:"warn"}:null)
+  ])}
+  ${card("Submittal volume by division and year", heat+`<div class="method">All-time record for the scope. Spec division is read from the leading digits of the submittal number.</div>`,"all-time")}
+  <div class="grid g2">
+    ${card("Volume and resubmit rate by division", chartBox("cDivVol"),"in period")}
+    ${card("Median review days by division", chartBox("cDivRev"),"vs baseline")}
+  </div>
+  ${card("Division signals", `<div id="divTbl">${table([{h:"Division",k:"k",n:true},{h:"Submittals",r:true,f:r=>fmtN(r.sm.n)},{h:"Pending",r:true,f:r=>fmtN(r.sm.open)},{h:"Past due",r:true,f:r=>fmtN(r.sm.pastDue)},{h:"Resubmit",r:true,f:r=>fmtP(r.sm.resub)},{h:"Median review",r:true,f:r=>fmtD(r.sm.medRev,0)+"d"},{h:"Signal",f:r=>sigBadge(r.sig.level)}],tblRows)}</div><div class="method">Submittals only. The RFI export carries no spec section field, so RFIs are not broken out by division. Procore spec section and sheet references add RFIs to this view once connected.</div>`,"5 or more submittals in period")}`;
+  bindRows($("divTbl"),tblRows,r=>openDrawer("Division",r.k,`${fmtN(r.S.length)} submittals in period`,[...r.S.filter(x=>x.open),...r.S.slice(-60)]));
+  mkChart("cDivVol",{type:"bar",data:{labels:chartRows.map(d=>d.k),datasets:[{label:"Submittals",data:chartRows.map(d=>d.n),backgroundColor:COLORS[0],yAxisID:"y"},{label:"Resubmit rate",data:chartRows.map(d=>d.sm.resub===null?null:Math.round(d.sm.resub*1000)/10),type:"line",borderColor:COLORS[4],backgroundColor:COLORS[4],yAxisID:"y1",tension:.3}]},options:{scales:{y1:{position:"right",beginAtZero:true,grid:{display:false},ticks:{callback:v=>v+"%",font:{size:11}}}}}});
+  mkChart("cDivRev",{type:"bar",data:{labels:chartRows.map(d=>d.k),datasets:[{label:"Median days",data:chartRows.map(d=>d.sm.medRev),backgroundColor:ragColors(chartRows.map(d=>d.sm.medRev),c.base.medRev)}]},options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{grid:{color:"#EEF0F2"}},y:{grid:{display:false}}}}});
+};
+
 /* ---- SkyView ---- */
 V.sky = c => {
   const child = S.level==="firm"?"studio":S.level==="type"?"client":S.level==="studio"?"project":S.level==="client"?"project":"consultant";
@@ -1216,7 +1258,7 @@ V.risk = c => {
 </script>
 <script>
 /* ===================== Wiring ===================== */
-const TITLES={port:"Portfolio",week:"This week",open:"Open and past due",rfi:"RFI health",sub:"Submittal health",sky:"SkyView",signal:"RFI and submittal signal",fee:"Fee and scope",res:"Resource planning",risk:"Risk mitigation"};
+const TITLES={port:"Portfolio",week:"This week",open:"Open and past due",rfi:"RFI health",sub:"Submittal health",div:"Division health",sky:"SkyView",signal:"RFI and submittal signal",fee:"Fee and scope",res:"Resource planning",risk:"Risk mitigation"};
 const FIRM_ONLY=new Set(["fee","res","risk"]);
 function render(){
   if(!S.M) return;

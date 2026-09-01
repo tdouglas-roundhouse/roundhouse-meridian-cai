@@ -162,6 +162,21 @@ table.t td.n{font-weight:700;color:var(--navy)}
 .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .pill{font-size:12px;background:var(--off);border:1px solid var(--line);border-radius:12px;padding:3px 10px}
 
+/* ---- insight blocks: from insight to action ---- */
+.ib-block{border:1px solid var(--line);border-left:4px solid var(--warn);background:var(--warn-bg);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.ib-block.risk{border-left-color:var(--risk);background:var(--risk-bg)}
+.ib-block.good{border-left-color:var(--good);background:var(--good-bg)}
+.ib-block.info{border-left-color:var(--blue);background:var(--accent-bg)}
+.ib-block[data-act]{cursor:pointer}
+.ib-block[data-act]:hover{border-color:#B9C0C7}
+.ib-head{display:flex;gap:8px;align-items:flex-start}
+.ib-dot{width:8px;height:8px;border-radius:50%;background:var(--warn);flex:none;margin-top:5px}
+.ib-block.risk .ib-dot{background:var(--risk)} .ib-block.good .ib-dot{background:var(--good)} .ib-block.info .ib-dot{background:var(--blue)}
+.ib-title{font-weight:700;color:var(--navy);font-size:13.5px;line-height:1.4}
+.ib-why{font-size:12.5px;color:var(--char);margin-top:5px;line-height:1.55}
+.ib-act{font-size:12.5px;color:var(--navy);margin-top:9px;padding-top:9px;border-top:1px solid rgba(26,43,60,.12);line-height:1.55}
+.ib-act .ib-al{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--blue);margin-right:8px}
+
 /* drawer */
 #drawer{position:fixed;top:0;right:-560px;width:540px;max-width:92vw;height:100vh;background:var(--white);border-left:1px solid var(--line);box-shadow:-6px 0 24px rgba(0,0,0,.08);transition:right .2s;z-index:20;display:flex;flex-direction:column}
 #drawer.open{right:0}
@@ -566,7 +581,7 @@ if(typeof module!=="undefined") module.exports=RH;
 </script>
 <script>
 /* ===================== App state and helpers ===================== */
-const S = { M:null, view:"week", level:"firm", value:"", dim:"type", period:"4w", cmp:"none", charts:[], tabs:{} };
+const S = { M:null, view:"week", level:"firm", value:"", dim:"type", period:"4w", cmp:"none", charts:[], tabs:{}, _actions:[] };
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmtN = n => n===null||n===undefined||isNaN(n) ? "–" : Math.round(n).toLocaleString();
@@ -729,6 +744,294 @@ function caiRead(findings){
   const border=lv==="risk"?"var(--risk)":lv==="warn"?"var(--warn)":lv==="good"?"var(--good)":"var(--blue)";
   return `<div class="ins" style="cursor:default;border-left:4px solid ${border};margin-bottom:16px"><div style="font-size:11px;font-weight:700;letter-spacing:.9px;color:var(--blue);text-transform:uppercase;padding-top:2px">CAi read</div><div><div class="it">${esc(lead.title)}</div><div class="ib">${body}</div></div></div>`;
 }
+
+/* ---- From insight to action: rules-driven corrective guidance.
+   Every block is computed from the loaded rows, scoped to the current
+   filters, and carries three parts: the signal, why it matters, and the
+   next best action. Levels: risk (act now), warn (act this week),
+   info (worth knowing), good (hold the cadence). ---- */
+function insightBlockHTML(f,idx){
+  const lv=f.level==="risk"?"risk":f.level==="good"?"good":f.level==="info"?"info":"warn";
+  const clickable=f.items&&f.items.length;
+  return `<div class="ib-block ${lv}"${clickable?` data-act="${idx}" role="button" tabindex="0" title="Click to see the supporting items"`:""}>
+    <div class="ib-head"><span class="ib-dot"></span><span class="ib-title">${f.title}</span></div>
+    ${f.why?`<div class="ib-why">${f.why}</div>`:""}
+    ${f.action?`<div class="ib-act"><span class="ib-al">Next best action</span>${f.action}</div>`:""}
+  </div>`;
+}
+function actionStack(c,view,max=4){
+  const pool=deriveActions(c).filter(f=>f.views.includes(view)).sort((a,b)=>b.w-a.w).slice(0,max);
+  if(!pool.length){
+    if(view==="week"||view==="open") return `<div class="sl">From insight to action</div>`+insightBlockHTML({level:"good",title:"Nothing in this scope needs corrective action right now",why:"No past-due exposure, no cluster running against baseline, no queue building on one desk.",action:"Hold the cadence. The record stays clean by being closed weekly, not audited quarterly."},-1);
+    return "";
+  }
+  const base=S._actions.length; S._actions.push(...pool);
+  return `<div class="sl">From insight to action</div>`+pool.map((f,i)=>insightBlockHTML(f,base+i)).join("");
+}
+function bindActionBlocks(){
+  document.querySelectorAll(".ib-block[data-act]").forEach(el=>{
+    const open=()=>{ const f=S._actions[+el.dataset.act]; if(f&&f.items&&f.items.length) openDrawer(f.eye||"Items",f.dtitle||"Supporting items",f.dsub||`${fmtN(f.items.length)} items`,f.items); };
+    el.addEventListener("click",open);
+    el.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  });
+}
+function deriveActions(c){
+  if(c._acts) return c._acts;
+  const A=[];
+  const pj=k=>{ const p=S.M.projects[k]; return esc(p?(p.name||k):k); };
+  const open=openItems(c);
+  const past=pastDueItems(c).map(it=>({it,over:daysOver(it,c.asOf)})).filter(x=>x.over!==null).sort((a,b)=>b.over-a.over);
+
+  // Oldest past-due item, named
+  if(past.length){
+    const x=past[0], it=x.it, label=(it.kind==="rfi"?"RFI ":"Submittal ")+it.number;
+    const hold=holderOf(it);
+    A.push({views:["week","open"],level:x.over>30?"risk":"warn",w:6,
+      title:`${esc(label)} on ${pj(it.project)} is ${fmtN(x.over)} days past due`,
+      why:`${esc(it.kind==="rfi"?it.subject:it.name)} was due ${fmtDate(it.kind==="rfi"?it.respondBy:it.returnBy)}${hold?`, and ${esc(hold)} is holding it`:""}. A ${it.kind==="rfi"?"question":"review"} this old has usually been worked around in the field, and a workaround the record never captured is where liability lives.`,
+      action:`Call the project team on ${pj(it.project)} today. Either close it with an answer, or close the record with what actually happened.`,
+      items:[it], eye:it.kind==="rfi"?"RFI":"Submittal", dtitle:it.number, dsub:S.M.projects[it.project].name});
+  }
+
+  // Past-due concentration in one project
+  if(past.length>=3){
+    const g=RH.groupBy(past,x=>x.it.project);
+    const top=Object.entries(g).sort((a,b)=>b[1].length-a[1].length)[0];
+    if(top && top[1].length>=3){
+      A.push({views:["week","open","signal"],level:top[1].length>=8?"risk":"warn",w:5,
+        title:`${pj(top[0])} concentrates ${fmtN(top[1].length)} of the ${fmtN(past.length)} past-due items`,
+        why:`One project carrying that share of the overdue queue is usually one blocked conversation, not many separate problems. Clearing the block clears the queue.`,
+        action:`Put all ${fmtN(top[1].length)} items on the agenda for the next OAC meeting on ${pj(top[0])}, oldest first, and leave the meeting with an owner and a date on each.`,
+        items:top[1].map(x=>x.it), eye:"Project", dtitle:S.M.projects[top[0]].name, dsub:`${fmtN(top[1].length)} past-due items`});
+    }
+  }
+
+  // Aged records: hygiene sweep
+  const aged=past.filter(x=>x.over>30);
+  if(aged.length>=10){
+    A.push({views:["open","port"],level:"warn",w:4,
+      title:`${fmtN(aged.length)} items are more than 30 days past their requested date`,
+      why:`Items that old are rarely still live questions. What they are is an incomplete record, and an incomplete record is what gets read against the firm if a dispute ever surfaces.`,
+      action:`Run a record-closing sweep: sort the past-due table oldest first and close anything already resolved in the field. Once CA Bridge is connected, the Procore closed date does most of this automatically.`,
+      items:aged.slice(0,150).map(x=>x.it), eye:"Aged records", dtitle:"30+ days past due", dsub:`${fmtN(aged.length)} items`});
+  }
+
+  // Code-adjacent items past due
+  const compRx=/\bada\b|accessib|life.?safety|egress|fire.?rated|fire.?alarm|sprinkler|smoke|guardrail|handrail|wheelchair/i;
+  const comp=past.filter(x=>compRx.test(x.it.kind==="rfi"?x.it.subject:x.it.name));
+  if(comp.length){
+    const first=comp[0].it;
+    A.push({views:["week","open","risk"],level:"risk",w:5.5,
+      title:`${fmtN(comp.length)} code-adjacent item${comp.length>1?"s are":" is"} sitting past due`,
+      why:`Accessibility and life-safety items carry compliance risk, not just schedule risk. ${esc(first.kind==="rfi"?first.subject:first.name)} on ${pj(first.project)} is the oldest at ${fmtN(comp[0].over)} days over. Corrections after the affected work is closed in cost multiples of a review today.`,
+      action:`Move these to the front of the review queue this week, before rough-in and inspections overtake them.`,
+      items:comp.map(x=>x.it), eye:"Code-adjacent", dtitle:"Accessibility and life safety", dsub:`${fmtN(comp.length)} past-due items`});
+  }
+
+  // Long-lead procurement waiting on review
+  const leadRx=/elevator|switchgear|curtain wall|storefront|structural steel|steel shop|joist|rtu\b|rooftop unit|generator|transformer|chiller|air handler|ahu\b|precast|millwork/i;
+  const openLead=open.filter(it=>it.kind==="sub"&&leadRx.test(it.name));
+  const pastLead=openLead.filter(it=>it.returnBy&&it.returnBy<c.asOf);
+  if(pastLead.length>=2||openLead.length>=6){
+    const pool=pastLead.length?pastLead:openLead;
+    const gp=RH.groupBy(pool,it=>it.project);
+    const topP=Object.entries(gp).sort((a,b)=>b[1].length-a[1].length)[0];
+    A.push({views:["week","open","sub","risk"],level:pastLead.length>=2?"risk":"warn",w:4.5,
+      title:`${fmtN(pool.length)} long-lead package${pool.length>1?"s":""} ${pastLead.length?"past due":"pending"} in the review queue`,
+      why:`Elevators, switchgear, structural steel, and glazing systems order on approval, not on submission. Long-lead schedule slips start in the review queue, not in the shop.${topP?` ${pj(topP[0])} holds the largest cluster at ${fmtN(topP[1].length)}.`:""}`,
+      action:`Batch these into a single review session this week. Approval is what releases fabrication.`,
+      items:pool.slice(0,120), eye:"Long-lead", dtitle:"Procurement-critical submittals", dsub:`${fmtN(pool.length)} open`});
+  }
+
+  // Multi-cycle resubmits
+  const multi=c.Sall.filter(s=>s.open&&s.revision>=2);
+  if(multi.length>=3){
+    const gm=RH.groupBy(multi,s=>s.project);
+    const topM=Object.entries(gm).sort((a,b)=>b[1].length-a[1].length)[0];
+    A.push({views:["week","sub","div"],level:topM[1].length>=5?"risk":"warn",w:4,
+      title:`${fmtN(multi.length)} open submittals are on their second cycle or later`,
+      why:`Each revise and resubmit cycle adds a week or more, and a package still circling after two passes usually means the sub is guessing at the correction rather than reading it.${topM&&topM[1].length>=2?` ${pj(topM[0])} carries the largest cluster at ${fmtN(topM[1].length)}.`:""}`,
+      action: topM&&topM[1].length>=2? `Set a 30-minute coordination call with the GC on ${pj(topM[0])} to walk the outstanding corrections before a further cycle, and record the outcome on each submittal.` : `Walk the outstanding corrections with each GC before a further cycle, and record the outcome on each submittal.`,
+      items:multi.slice(0,120), eye:"Resubmit cycles", dtitle:"Second cycle and later", dsub:`${fmtN(multi.length)} open`});
+  }
+
+  // Division standards conversation
+  if(c.base.resub){
+    const dvA=Object.values(RH.groupBy(c.Sall,s=>s.divisionName)).map(v=>({k:v[0].divisionName,S:v,sm:RH.subMetrics(v,c.asOf)})).filter(d=>d.sm.acted>=50&&d.sm.resub!==null&&d.sm.resub>c.base.resub*1.25).sort((a,b)=>b.sm.resub-a.sm.resub);
+    if(dvA.length){
+      const d=dvA[0];
+      A.push({views:["sub","div","port"],level:d.sm.resub>c.base.resub*1.6?"risk":"warn",w:3.8,
+        title:`${esc(d.k)} runs ${fmtP(d.sm.resub)} resubmit against a ${fmtP(c.base.resub)} baseline`,
+        why:`${fmtN(d.sm.resubN)} of ${fmtN(d.sm.acted)} reviewed packages in this division came back revise and resubmit. When one division runs hot across projects and GCs, the pattern points at the documents, not the contractor.`,
+        action:`Pull the ${esc(d.k)} master spec and submittal requirements for a standards review, and check the redlines on the last ten returns for a repeating correction.`,
+        items:d.S.filter(s=>s.resubmit).slice(-100), eye:"Division", dtitle:d.k, dsub:`${fmtP(d.sm.resub)} resubmit`});
+    }
+  }
+
+  // Slowest responder in the current slice (RFIs)
+  {
+    const g=byDim(c.R,[]).filter(x=>x.rm.respN>=8&&x.rm.medResp!==null);
+    const slow=g.sort((a,b)=>b.rm.medResp-a.rm.medResp)[0];
+    if(slow&&c.base.medResp&&slow.rm.medResp>c.base.medResp*1.5){
+      A.push({views:["rfi"],level:"warn",w:3.5,
+        title:`${esc(slow.k)} runs the slowest RFI response at ${fmtD(slow.rm.medResp,0)} days median`,
+        why:`Against ${fmtD(c.base.medResp,0)} days for the scope, across ${fmtN(slow.rm.respN)} answered RFIs. Slow answers do not make questions go away; they make the field decide without you.`,
+        action:`Reset the turnaround expectation with ${esc(slow.k)} this week and agree who triages their RFIs first. A written response target in the next agreement makes the number enforceable.`,
+        items:slow.R.slice(-80), eye:dimLabel(), dtitle:slow.k, dsub:`${fmtD(slow.rm.medResp,0)}d median response`});
+    }
+  }
+
+  // High-priority escalation
+  if(c.rm.n>=10&&c.rm.highShare!==null&&c.base.highShare&&c.rm.highShare>c.base.highShare*1.5){
+    A.push({views:["rfi","week"],level:"risk",w:3.5,
+      title:`High-priority share is ${fmtP(c.rm.highShare)}, well above the ${fmtP(c.base.highShare)} norm`,
+      why:`When the field escalates at this rate, either the schedule is genuinely compressing or priority is being used to jump the queue. Both are worth knowing, and they call for different responses.`,
+      action:`Ask the GC which of the period's high-priority RFIs were truly schedule-critical, and agree the triage criteria before the flag loses its meaning.`,
+      items:c.R.filter(r=>r.highPri).slice(-80), eye:"High priority", dtitle:"Escalated RFIs", dsub:`${fmtP(c.rm.highShare)} of period volume`});
+  }
+
+  // Recurring theme points at the drawings
+  {
+    const th=Object.entries(RH.groupBy(c.Rall,r=>r.theme)).map(([k,v])=>({k,v,n:v.length,share:v.length/Math.max(1,c.Rall.length)})).sort((a,b)=>b.n-a.n);
+    const t=th.find(x=>x.k!=="General clarification");
+    if(t&&t.share>0.1&&t.n>=20){
+      A.push({views:["rfi"],level:"warn",w:3,
+        title:`${esc(t.k)} keeps coming back: ${fmtN(t.n)} RFIs, ${fmtP(t.share)} of the record`,
+        why:`A theme this persistent across projects is a drawing-set question wearing a project costume. Answering it one RFI at a time pays for the same answer repeatedly.`,
+        action:`Add a standard detail or general note covering the recurring ${esc(t.k.toLowerCase())} question to the base set. The recurring version disappears at issue for construction.`,
+        items:t.v.slice(-80), eye:"RFI theme", dtitle:t.k, dsub:`${fmtN(t.n)} RFIs`});
+    }
+  }
+
+  // Reviewer overload
+  {
+    const saved=S.dim; S.dim="reviewer"; const g=byDim(c.Rall,c.Sall,10); S.dim=saved;
+    const loaded=g.map(x=>({...x,load:x.R.filter(r=>r.open).length+x.S.filter(s=>s.open).length})).filter(x=>x.load>=10).sort((a,b)=>b.load-a.load);
+    if(loaded.length){
+      const r0=loaded[0];
+      A.push({views:["res","week"],level:"risk",w:3.6,
+        title:`${esc(r0.k)} is carrying ${fmtN(r0.load)} open items right now${loaded.length>1?`, and ${fmtN(loaded.length-1)} other reviewer${loaded.length>2?"s are":" is"} above ten`:""}`,
+        why:`An open queue that deep on one desk is the leading indicator of the next past-due wave, whatever the reviewer's pace.`,
+        action:`Rebalance this week: move the newest assignments off the heaviest desks. The open queue is the leading indicator of the next past-due wave, so clear it before it dates.`,
+        items:[...r0.R.filter(x=>x.open),...r0.S.filter(x=>x.open)].slice(0,120), eye:"Reviewer", dtitle:r0.k, dsub:`${fmtN(r0.load)} open items`});
+    }
+  }
+
+  // Reviewer concentration: coverage risk
+  {
+    const saved=S.dim; S.dim="reviewer"; const g=byDim(c.Rall,c.Sall,10); S.dim=saved;
+    const rows=[...g].sort((a,b)=>b.n-a.n);
+    if(rows.length>=4){
+      const tot=rows.reduce((a,r)=>a+r.n,0); const top3=rows.slice(0,3); const share=top3.reduce((a,r)=>a+r.n,0)/Math.max(1,tot);
+      if(share>0.5){
+        A.push({views:["res"],level:share>0.7?"risk":"warn",w:3.3,
+          title:`${top3.map(r=>esc(r.k)).join(", ")} carry ${fmtP(share)} of the firm's review volume`,
+          why:`Three desks holding that share of ${fmtN(tot)} recorded reviews means the CA record, its judgment calls, and its client relationships concentrate with them. Concentration is a coverage risk before it is a performance question.`,
+          action:`Name a second reviewer on each of their largest active projects, and route the next new project's submittal log to the second tier so the bench builds before it is needed.`,
+          items:[...top3[0].R.filter(x=>x.open),...top3[0].S.filter(x=>x.open)].slice(0,120), eye:"Reviewer", dtitle:top3[0].k, dsub:"heaviest recorded volume"});
+      }
+    }
+  }
+
+  // Reviewer calibration: pace and rigor spread
+  {
+    const saved=S.dim; S.dim="reviewer"; const g=byDim(c.Rall,c.Sall,10); S.dim=saved;
+    const timed=g.filter(x=>x.sm.revN>=20&&x.sm.medRev!==null);
+    if(timed.length>=3){
+      const fast=[...timed].sort((a,b)=>a.sm.medRev-b.sm.medRev)[0];
+      const slow=[...timed].sort((a,b)=>b.sm.medRev-a.sm.medRev)[0];
+      if(fast.k!==slow.k&&slow.sm.medRev>=fast.sm.medRev*2&&slow.sm.medRev-fast.sm.medRev>=5){
+        A.push({views:["res"],level:"warn",w:3.1,
+          title:`Reviews on ${esc(slow.k)}'s desk run ${fmtD(slow.sm.medRev,0)} days median against ${fmtD(fast.sm.medRev,0)} for ${esc(fast.k)}`,
+          why:`Both across 20 or more returned reviews. Assignment mix explains part of any spread, but a gap this wide inside one firm is worth a look either way: it is either a workload story or a triage story.`,
+          action:`Compare the two desks' recent packages before drawing conclusions. If the mix is comparable, agree a shared triage standard; if it is not, rebalance the assignments that created the gap.`,
+          items:slow.S.slice(-80), eye:"Reviewer", dtitle:slow.k, dsub:`${fmtD(slow.sm.medRev,0)}d median review`});
+      }
+    }
+  }
+
+  // Review window promised vs kept
+  if(c.sm.revN>=10&&c.sm.medRev!==null&&c.sm.medReq!==null&&c.sm.medRev>c.sm.medReq){
+    A.push({views:["sub"],level:"warn",w:3,
+      title:`Median review runs ${fmtD(c.sm.medRev,0)} days against a requested ${fmtD(c.sm.medReq,0)}`,
+      why:`A window that is promised and routinely missed reads worse to a GC than a longer honest one, and it erodes the firm's standing in the schedule conversation.`,
+      action:`Either staff the review queue to the promised window, or rebaseline the requested turnaround with the GC to the number the record shows the team actually keeps.`});
+  }
+
+  // Early resubmit signal on young projects
+  {
+    const early=earlyResubmit(c);
+    if(early.n>=30&&early.rate!==null&&c.base.resub&&early.rate>c.base.resub*1.25){
+      A.push({views:["signal"],level:"warn",w:3.4,
+        title:`Early resubmits run ${fmtP(early.rate)} in a project's first eight weeks, against ${fmtP(c.base.resub)} overall`,
+        why:`The first weeks of submittals are where a project shows its coordination quality. A high early rate is the cheapest warning a project gives, because nothing is built yet.`,
+        action:`Add a submittal-requirements walkthrough to the kickoff agenda for projects now inside their first eight weeks, and watch their next ten returns.`});
+    }
+  }
+
+  // Watch-list project: interrupt the compound
+  {
+    const rows=activeProjects(c).filter(r=>r.sig.level==="risk").sort((a,b)=>b.sig.score-a.sig.score);
+    if(rows.length){
+      const r=rows[0];
+      A.push({views:["signal","week"],level:"risk",w:4.2,
+        title:`${esc(r.name)} has the highest combined signal in the active portfolio`,
+        why:`${esc(r.sig.why.join(", "))}. Signals at this level tend to compound when nobody interrupts them; a short conversation now is the cheapest interruption available.`,
+        action:`Principal check-in on ${esc(r.name)} this week: walk the open queue with the project lead and decide what gets closed, escalated, or re-dated.`,
+        items:[...r.Ro.filter(x=>x.open),...r.So.filter(x=>x.open)].slice(0,120), eye:"Project", dtitle:r.name, dsub:r.sig.why.join(" · ")});
+    }
+  }
+
+  // Consultant conversation with numbers attached
+  if(c.base.resub){
+    const saved=S.dim; S.dim="consultant"; const cons=byDim(c.Rall,c.Sall,30); S.dim=saved;
+    const hot=cons.filter(x=>x.sm.acted>=20&&x.sm.resub!==null&&x.sm.resub>c.base.resub*1.3).sort((a,b)=>b.sm.resub-a.sm.resub)[0];
+    if(hot){
+      A.push({views:["sky"],level:"warn",w:3.2,
+        title:`${esc(hot.k)} returns ${fmtP(hot.sm.resub)} of reviews as revise and resubmit`,
+        why:`Across ${fmtN(hot.sm.acted)} reviewed submittals, against a ${fmtP(c.base.resub)} baseline. Every extra cycle is review time the fee did not plan for, on every project they touch.`,
+        action:`Bring these numbers to the next agreement conversation with ${esc(hot.k)}, and agree a completeness standard for what they submit.`,
+        items:hot.S.filter(s=>s.resubmit).slice(-80), eye:"Consultant", dtitle:hot.k, dsub:`${fmtP(hot.sm.resub)} resubmit`});
+    }
+  }
+
+  // Fee calibration by project type
+  {
+    const saved=S.dim; S.dim="type"; const gt=byDim(c.Rall,c.Sall,20); S.dim=saved;
+    if(gt.length>=2){
+      const per=g=>g.sm.n/Math.max(1,g.projects);
+      const hv=[...gt].sort((a,b)=>per(b)-per(a))[0], lv=[...gt].sort((a,b)=>per(a)-per(b))[0];
+      if(hv&&lv&&hv.k!==lv.k&&per(hv)/Math.max(0.1,per(lv))>=1.5){
+        A.push({views:["fee"],level:"info",w:3,
+          title:`A ${esc(hv.k)} project demands ${fmtD(per(hv)/Math.max(0.1,per(lv)),1)}x the submittal load of ${esc(lv.k)}`,
+          why:`${fmtD(per(hv))} submittals per project against ${fmtD(per(lv))}. If the CA line is priced the same percentage for both, one of them is subsidizing the other.`,
+          action:`Calibrate the CA line in the next ${esc(hv.k)} proposal to the recorded load, not the standard percentage, and put this table behind the number when the client asks.`});
+      }
+    }
+  }
+
+  // SkyView outlier: coach to the internal best
+  {
+    const child=S.level==="firm"?"studio":S.level==="type"?"client":S.level==="studio"?"project":S.level==="client"?"project":"consultant";
+    const saved=S.dim; S.dim=child; const g=byDim(c.Rall,c.Sall,5); S.dim=saved;
+    const withRes=g.filter(x=>x.sm.acted>=10&&x.sm.resub!==null);
+    if(withRes.length>=2&&c.base.resub){
+      const hi=[...withRes].sort((a,b)=>b.sm.resub-a.sm.resub)[0];
+      const lo=[...withRes].sort((a,b)=>a.sm.resub-b.sm.resub)[0];
+      if(hi.k!==lo.k&&hi.sm.resub>c.base.resub*1.25){
+        A.push({views:["sky"],level:"warn",w:3.4,
+          title:`${esc(hi.k)} runs ${fmtP(hi.sm.resub)} resubmit while ${esc(lo.k)} runs ${fmtP(lo.sm.resub)}`,
+          why:`Same firm, same tools, a ${fmtD((hi.sm.resub-lo.sm.resub)*100,0)}-point spread. Inside one practice that spread is coachable, and the record shows exactly which packages drive it.`,
+          action:`Sit ${esc(hi.k)} down with the record: identify the packages behind the rate, and agree what ${esc(lo.k)} does differently at intake that they will adopt.`,
+          items:hi.S.filter(s=>s.resubmit).slice(-80), eye:dimLabel(child), dtitle:hi.k, dsub:`${fmtP(hi.sm.resub)} resubmit`});
+      }
+    }
+  }
+
+  c._acts=A;
+  return A;
+}
+
 const pctPts=(a,b)=>fmtD((a-b)*100,1)+" points";
 function vsBase(v,b,{n=0,minN=10,higherIsBad=true,fmt=fmtP,noun="",w0=2}={}){
   if(v===null||b===null||n<minN) return null;
@@ -895,7 +1198,8 @@ V.port = c => {
     ${card("RFI volume by client type", chartBox("cPortTypeVol"))}
     ${card("Resubmit rate by client type", chartBox("cPortTypeRsb"), "vs baseline")}
   </div>
-  ${card("Most active projects", `<div id="portTbl">${table([{h:"Project",k:"name",n:true},{h:"Client type",f:r=>esc(r.p.type)},{h:dimLabel(child)==="studio"?"Studio":"Lead",f:r=>esc(r.p.studio)},{h:"RFIs",r:true,f:r=>fmtN(r.Ro.length)},{h:"Submittals",r:true,f:r=>fmtN(r.So.length)},{h:"Resubmit",r:true,f:r=>fmtP(r.sm.resub)},{h:"Median resp.",r:true,f:r=>fmtD(r.rm.medResp,0)+"d"},{h:"Signal",f:r=>sigBadge(r.sig.level)}],active)}</div>`,"ranked by signal, click to enter the project")}`;
+  ${card("Most active projects", `<div id="portTbl">${table([{h:"Project",k:"name",n:true},{h:"Client type",f:r=>esc(r.p.type)},{h:dimLabel(child)==="studio"?"Studio":"Lead",f:r=>esc(r.p.studio)},{h:"RFIs",r:true,f:r=>fmtN(r.Ro.length)},{h:"Submittals",r:true,f:r=>fmtN(r.So.length)},{h:"Resubmit",r:true,f:r=>fmtP(r.sm.resub)},{h:"Median resp.",r:true,f:r=>fmtD(r.rm.medResp,0)+"d"},{h:"Signal",f:r=>sigBadge(r.sig.level)}],active)}</div>`,"ranked by signal, click to enter the project")}
+  ${actionStack(c,"port",2)}`;
   document.querySelectorAll("#kidCards .mc").forEach(el=>el.addEventListener("click",()=>setScope(child,el.dataset.k)));
   bindRows($("portTbl"),active,r=>setScope("project",r.key));
   mkChart("cPortYears",{type:"bar",data:{labels:Y.map(y=>partial&&+y===curY?y+" YTD":y),datasets:[{label:"RFIs",data:Y.map(y=>years[y].r),backgroundColor:COLORS[0]},{label:"Submittals",data:Y.map(y=>years[y].s),backgroundColor:"#8AC6EA"}]}});
@@ -921,6 +1225,7 @@ V.week = c => {
     (g[0]&&g[0].n>= (c.rm.n+c.sm.n)*0.3 && g.length>1? {title:"", body:`${esc(g[0].k)} carries ${fmtP(g[0].n/Math.max(1,c.rm.n+c.sm.n))} of the period's load, more than any other ${dimLabel()}.`, w:1.5}:null),
     (c.sm.acted>=20? (()=>{ const vb=vsBase(c.sm.resub,c.base.resub,{n:c.sm.acted,minN:20}); return vb&&vb.level!=="info"? {title:"", body:`Resubmit rate in the period is ${fmtP(c.sm.resub)}, ${vb.dir} the ${fmtP(c.base.resub)} baseline.`, w:vb.w, level:vb.level}:null; })():null)
   ])}
+  ${actionStack(c,"week")}
   <div class="sl">CAi briefing</div>
   <div class="card" style="margin-bottom:16px"><div class="ct"><span>Editorial read on ${esc(scopeLabel())}</span><span class="tag">${esc(c.w.label)}</span></div>
     <div id="briefBox">${S.brief&&S.brief.scope===scopeLabel()? renderBriefing() : `<div class="empty" style="padding:18px">CAi writes a leadership briefing from the computed record: what stands out, what explains it, and what conversation it supports.</div>`}</div>
@@ -979,6 +1284,7 @@ V.open = c => {
     (past.length? {title:`${fmtN(past.length)} past due, oldest ${fmtN(past[0].over)} days over`, body:`${fmtN(past.filter(x=>x.over>30).length)} items are more than 30 days past their requested date. Items that old are rarely still live questions; the likely work is closing the record, and the Procore closed-date field will do much of it automatically once connected.`, level:past.filter(x=>x.over>30).length>10?"risk":"warn", w:5}:{title:"Nothing past due", body:"Every open item is inside its requested window.", level:"good", w:3}),
     (open.length>500? {title:"", body:`${fmtN(open.length)} items read as open in total. If that number looks too high, most of it is usually old records that were never marked complete rather than live work.`, w:2, level:"warn"}:null)
   ])}
+  ${actionStack(c,"open")}
   <div class="grid g12">
     ${card("How long past due", chartBox("cAging"), "open items only")}
     ${card("Past due, longest first", `<div id="pastTbl">${table([{h:"Item",k:"n",n:true,f:r=>esc(r.it.number)},{h:"Project",f:r=>esc(S.M.projects[r.it.project].name)},{h:"Subject",f:r=>esc(r.it.kind==="rfi"?r.it.subject:r.it.name)},{h:"Type",f:r=>r.it.kind==="rfi"?"RFI":"Submittal"},{h:"Holding",f:r=>esc(holderOf(r.it)||"–")},{h:"Due",f:r=>fmtDate(r.it.kind==="rfi"?r.it.respondBy:r.it.returnBy)},{h:"Days over",r:true,f:r=>`<span class="badge ${r.over>30?"b-risk":r.over>7?"b-warn":"b-ok"}">${fmtN(r.over)}</span>`}],rows)}</div>`, past.length>60?`showing 60 of ${past.length}`:`${past.length} items`)}
@@ -1006,6 +1312,7 @@ V.rfi = c => {
     (g[0]&&g.length>1&&g[0].rm.medResp!==null&&g[g.length-1].rm.medResp!==null? (()=>{ const slow=topOf(g.filter(x=>x.rm.respN>=8),x=>x.rm.medResp); return slow&&slow.rm.medResp>c.base.medResp*1.5? {title:"", body:`${esc(slow.k)} runs the slowest at ${fmtD(slow.rm.medResp,0)} days median.`, w:2, level:"warn"}:null; })():null),
     (c.rm.n>=10&&c.rm.highShare!==null? (()=>{ const vb=vsBase(c.rm.highShare,c.base.highShare,{n:c.rm.n,minN:10}); return vb&&vb.level==="risk"? {title:"", body:`High-priority share is ${fmtP(c.rm.highShare)}, well above the ${fmtP(c.base.highShare)} norm — the field is escalating.`, w:vb.w, level:"risk"}:null; })():null)
   ])}
+  ${actionStack(c,"rfi")}
   <div class="grid g2">
     ${card("RFI volume by month", chartBox("cRfiMo"))}
     ${card("Median response by "+dimLabel(), chartBox("cRfiResp")+((()=>{const s2=[...g].filter(x=>x.rm.respN>=8).sort((a,b)=>(b.rm.medResp||0)-(a.rm.medResp||0)); return s2.length>=2? note(`<b>${esc(s2[0].k)}</b> and <b>${esc(s2[1].k)}</b> carry the longest response cycles at ${fmtD(s2[0].rm.medResp,0)} and ${fmtD(s2[1].rm.medResp,0)} days median, against ${fmtD(c.base.medResp,0)} for the scope. Green is at or under baseline; amber and red run above it.`):"";})()), "days vs baseline")}
@@ -1048,6 +1355,7 @@ V.sub = c => {
     (dv[0]&&dv[0].sm.acted>=15? {title:"", body:`${esc(dv[0].k)} leads on volume (${fmtN(dv[0].n)}); the highest resubmit division with real volume is ${esc((dv.filter(d=>d.sm.acted>=15).sort((a,b)=>(b.sm.resub||0)-(a.sm.resub||0))[0]||dv[0]).k)} at ${fmtP((dv.filter(d=>d.sm.acted>=15).sort((a,b)=>(b.sm.resub||0)-(a.sm.resub||0))[0]||dv[0]).sm.resub)}.`, w:2}:null),
     (c.sm.revN>=10&&c.sm.medRev!==null&&c.sm.medReq!==null? {title:"", body:`Median review runs ${fmtD(c.sm.medRev,0)} days against a requested ${fmtD(c.sm.medReq,0)}${c.sm.medRev>c.sm.medReq?" — the review window is being missed more often than met":""}.`, w:c.sm.medRev>c.sm.medReq?2.5:1, level:c.sm.medRev>c.sm.medReq?"warn":"info"}:null)
   ])}
+  ${actionStack(c,"sub")}
   <div class="grid g21">
     ${card("Volume and resubmit rate by spec division", chartBox("cSubDiv")+`<div class="method">Spec division is read from the leading digits of the submittal number.</div>`)}
     ${card("Architect action", chartBox("cSubAct"))}
@@ -1095,6 +1403,7 @@ V.div = c => {
     (top3.length===3? {title:"", body:`${esc(top3[0].k)}, ${esc(top3[1].k)}, and ${esc(top3[2].k)} account for ${fmtP(top3N/totN)} of period volume. Staffing and spec attention concentrated there covers most of the review load.`, w:2}:null),
     (slow&&c.base.medRev&&slow.sm.medRev>c.base.medRev*1.2? {title:"", body:`${esc(slow.k)} runs the longest review cycle at a ${fmtD(slow.sm.medRev,0)} day median against ${fmtD(c.base.medRev,0)} firm wide.`, w:1.5, level:"warn"}:null)
   ])}
+  ${actionStack(c,"div",3)}
   ${card("Submittal volume by division and year", heat+`<div class="method">All-time record for the scope. Spec division is read from the leading digits of the submittal number.</div>`,"all-time")}
   <div class="grid g2">
     ${card("Volume and resubmit rate by division", chartBox("cDivVol"),"in period")}
@@ -1128,6 +1437,7 @@ V.sky = c => {
     (fast&&hiRes&&fast.k!==hiRes.k? {title:"", body:`${esc(fast.k)} sets the pace on RFI response at a ${fmtD(fast.rm.medResp,0)}-day median. The spread between ${dimLabel(child)}s is the point: same firm, same tools, different outcomes.`, w:2}:null),
     (rows.filter(r=>r.sig.level!=="ok").length? {title:"", body:`${fmtN(rows.filter(r=>r.sig.level==="risk").length)} ${dimLabel(child)}${rows.filter(r=>r.sig.level==="risk").length===1?"":"s"} on watch, ${fmtN(rows.filter(r=>r.sig.level==="warn").length)} elevated — reasons are in the table.`, w:1.5}:null)
   ])}
+  ${actionStack(c,"sky",3)}
   ${card(dimLabel(child).replace(/^./,x=>x.toUpperCase())+" comparison", `<div id="skyTbl">${table([{h:dimLabel(child),k:"k",n:true},{h:"Projects",r:true,f:r=>fmtN(r.projects)},{h:"RFIs",r:true,f:r=>fmtN(r.rm.n)},{h:"Submittals",r:true,f:r=>fmtN(r.sm.n)},{h:"Open past due",r:true,f:r=>fmtN(r.rm.pastDue+r.sm.pastDue)},{h:"Resubmit",r:true,f:r=>fmtP(r.sm.resub)},{h:"Median RFI resp.",r:true,f:r=>fmtD(r.rm.medResp,0)+"d"},{h:"Median review",r:true,f:r=>fmtD(r.sm.medRev,0)+"d"},{h:"Signal",f:r=>sigBadge(r.sig.level)}],rows.slice(0,25))}</div>`, rows.length>25?`showing 25 of ${rows.length}, ranked by signal`:"ranked by signal")}
   <div class="grid g2" style="margin-top:14px">
     ${card("Median review days by "+dimLabel(child), chartBox("cSkyRev"))}
@@ -1158,6 +1468,7 @@ V.signal = c => {
     (early.n>=30&&early.rate!==null&&c.base.resub? (()=>{ const vb=vsBase(early.rate,c.base.resub,{n:early.n,minN:30}); return vb&&vb.dir==="above"? {title:"", body:`Early resubmits run ${fmtP(early.rate)} in a project's first eight weeks vs ${fmtP(c.base.resub)} overall — a high early rate is the cheapest warning a project gives.`, w:2.5, level:"warn"}:null; })():null),
     (rows.filter(r=>r.sig.level==="risk").length? {title:"", body:`${fmtN(rows.filter(r=>r.sig.level==="risk").length)} active project${rows.filter(r=>r.sig.level==="risk").length===1?"":"s"} on watch; the Why column carries the specifics.`, w:2}:null)
   ])}
+  ${actionStack(c,"signal",3)}
   <div class="grid g2">
     ${card("Submittal to RFI ratio by year", chartBox("cSigRatio")+note("A rising ratio means documentation volume is outpacing coordination resolution."))}
     ${card("Resubmit rate by year", chartBox("cSigRsb"))}
@@ -1182,6 +1493,7 @@ V.fee = c => {
     (gt.length>=2? (()=>{ const hv=topOf(gt,x=>perProj(x).sub); const lv=[...gt].sort((a,b)=>perProj(a).sub-perProj(b).sub)[0]; return hv&&lv&&hv.k!==lv.k? {title:`A ${esc(hv.k)} project carries ${fmtD(perProj(hv).sub/Math.max(0.1,perProj(lv).sub),1)}x the submittal load of ${esc(lv.k)}`, body:`${fmtD(perProj(hv).sub)} submittals and ${fmtD(perProj(hv).rfi)} RFIs per project, against ${fmtD(perProj(lv).sub)} and ${fmtD(perProj(lv).rfi)}. If CA is priced the same for both, one of them is mispriced.`, w:3}:null; })():null),
     (gt.length? (()=>{ const hr=topOf(gt.filter(x=>x.sm.acted>=30),x=>x.sm.resub); return hr&&c.base.resub&&hr.sm.resub>c.base.resub*1.2? {title:"", body:`${esc(hr.k)} also runs the highest resubmit rate at ${fmtP(hr.sm.resub)} — coordination burden per fee dollar, not just volume.`, w:2, level:"warn"}:null; })():null)
   ])}
+  ${actionStack(c,"fee",2)}
   ${card("CA burden by project type", `<div id="feeTbl">${table([{h:"Project type",k:"k",n:true},{h:"Projects",r:true,f:r=>fmtN(r.projects)},{h:"RFIs / project",r:true,f:r=>fmtD(perProj(r).rfi)},{h:"Submittals / project",r:true,f:r=>fmtD(perProj(r).sub)},{h:"Resubmit",r:true,f:r=>fmtP(r.sm.resub)},{h:"Median review",r:true,f:r=>fmtD(r.sm.medRev,0)+"d"},{h:"Median RFI resp.",r:true,f:r=>fmtD(r.rm.medResp,0)+"d"}],gt)}</div><div class="method">Project type is <b>inferred from the project name</b> unless a mapping file names it. ${fmtN(Object.values(S.M.projects).filter(p=>p.typeSrc==="mapped").length)} of ${fmtN(Object.keys(S.M.projects).length)} projects are mapped.</div>`)}
   <div class="grid g2" style="margin-top:14px">
     ${card("Submittals per project by type", chartBox("cFeeSub"))}
@@ -1214,6 +1526,7 @@ V.res = c => {
     (rows.filter(r=>r.work==="risk").length? {title:"", body:`${fmtN(rows.filter(r=>r.work==="risk").length)} reviewer${rows.filter(r=>r.work==="risk").length===1?" is":"s are"} carrying ten or more open items right now.`, w:2.5, level:"risk"}:null),
     (hi&&fast&&hi.k!==fast.k? {title:"", body:`The scatter is the calibration conversation: ${esc(fast.k)} turns reviews in ${fmtD(fast.sm.medRev,0)} days, ${esc(hi.k)} sends back ${fmtP(hi.sm.resub)} — speed and rigor are not the same seat.`, w:1.5}:null)
   ])}
+  ${actionStack(c,"res",3)}
   <div class="grid g2">
     ${card("Review volume by team member", chartBox("cResVol"))}
     ${card("Resubmit rate vs median review time", chartBox("cResSc")+note(`Each point is a reviewer with 10 or more returned reviews. Color is resubmit rate against the ${fmtP(c.base.resub)} scope baseline: green at or under, amber above, red well above. Upper left: fast but high resubmit. Lower right: thorough but slow. Position is the start of the question, not a ranking; assignment mix matters.`), "vs baseline")}
@@ -1236,15 +1549,16 @@ V.risk = c => {
   const pri = t => t.share>0.15&&t.hi>c.base.highShare? "risk" : t.share>0.08? "warn":"ok";
   const dv=Object.values(RH.groupBy(c.Sall,s=>s.divisionName)).map(v=>({k:v[0].divisionName,n:v.length,sm:RH.subMetrics(v,c.asOf)})).filter(d=>d.sm.acted>=50).sort((a,b)=>(b.sm.resub||0)-(a.sm.resub||0)).slice(0,8);
   const recs=[];
-  if(dv[0]) recs.push({t:`${dv[0].k} carries the highest resubmit rate`, b:`${fmtP(dv[0].sm.resub)} across ${fmtN(dv[0].sm.acted)} reviewed submittals, against a firm baseline of ${fmtP(c.base.resub)}. If it holds across GCs, it is a document standards or submittal requirements conversation, not a project one.`});
-  if(cons[0]&&cons[0].sm.resub!==null) recs.push({t:`${cons[0].k} returns the most revise and resubmit`, b:`${fmtP(cons[0].sm.resub)} of ${fmtN(cons[0].sm.acted)} submittals reviewed. Worth raising in the next consultant agreement, with the numbers attached.`});
+  if(dv[0]) recs.push({lv:(c.base.resub&&dv[0].sm.resub>c.base.resub*1.6)?"risk":"warn", t:`${dv[0].k} carries the highest resubmit rate`, b:`${fmtP(dv[0].sm.resub)} across ${fmtN(dv[0].sm.acted)} reviewed submittals, against a firm baseline of ${fmtP(c.base.resub)}. If it holds across GCs, it is a document standards or submittal requirements conversation, not a project one.`, a:`Pull the ${dv[0].k} master spec and submittal requirements for a standards review, and check the redlines on the last ten returns for a repeating correction.`});
+  if(cons[0]&&cons[0].sm.resub!==null) recs.push({lv:"warn", t:`${cons[0].k} returns the most revise and resubmit`, b:`${fmtP(cons[0].sm.resub)} of ${fmtN(cons[0].sm.acted)} submittals reviewed. Every extra cycle is review time the fee did not plan for, on every project they touch.`, a:`Bring these numbers to the next agreement conversation with ${cons[0].k}, and agree a completeness standard for what they submit.`});
   const slowGc=[...gcs].filter(g=>g.sm.revN>=20).sort((a,b)=>(b.sm.medRev||0)-(a.sm.medRev||0))[0];
-  if(slowGc) recs.push({t:`${slowGc.k} projects run the longest submittal reviews`, b:`Median ${fmtD(slowGc.sm.medRev,0)} days against ${fmtD(c.base.medRev,0)} firm-wide. Check whether their submittals arrive complete, or whether review is queuing on the firm side.`});
-  if(th[0]&&th[0].k!=="General clarification") recs.push({t:`${th[0].k} is the largest RFI theme`, b:`${fmtP(th[0].share)} of all RFIs. A standard detail or note added to the base drawing set would address the recurring version.`});
+  if(slowGc) recs.push({lv:"warn", t:`${slowGc.k} projects run the longest submittal reviews`, b:`Median ${fmtD(slowGc.sm.medRev,0)} days against ${fmtD(c.base.medRev,0)} firm-wide. The days sit on one side of the table or the other, and the fix is different for each.`, a:`Ask ${slowGc.k} to certify completeness at submission, and check the firm-side queue for the same period. Assign the fix to whichever side the days sit on.`});
+  if(th[0]&&th[0].k!=="General clarification") recs.push({lv:"warn", t:`${th[0].k} is the largest RFI theme`, b:`${fmtP(th[0].share)} of all RFIs. Answering the same question one RFI at a time pays for the same answer repeatedly.`, a:`Add a standard detail or general note covering the recurring ${th[0].k.toLowerCase()} question to the base drawing set. The recurring version disappears at issue for construction.`});
   $("view").innerHTML=`
   <div class="memo"><div class="m-e">Risk mitigation</div><div class="m-t">From insight to action</div><div class="m-s">Where the record supports a conversation: document standards, consultant agreements, contractor terms.</div></div>
   <div class="sl">Recommendations</div>
-  ${recs.map((r,i)=>`<div class="ins" style="cursor:default"><div class="rank">${i+1}</div><div><div class="it">${esc(r.t)}</div><div class="ib">${esc(r.b)}</div></div></div>`).join("")||`<div class="empty">Not enough history in this scope to make a recommendation.</div>`}
+  ${recs.map(r=>insightBlockHTML({level:r.lv||"warn",title:esc(r.t),why:esc(r.b),action:esc(r.a||"")},-1)).join("")||`<div class="empty">Not enough history in this scope to make a recommendation.</div>`}
+  ${actionStack(c,"risk",3)}
   <div class="sl">Document standards: where RFI volume points at the drawings</div>
   ${card("RFI themes", `<div id="thTbl">${table([{h:"Theme",k:"k",n:true},{h:"RFIs",r:true,f:r=>fmtN(r.n)},{h:"Share",r:true,f:r=>fmtP(r.share)},{h:"High-priority",r:true,f:r=>fmtP(r.hi)},{h:"Priority",f:r=>pri(r)==="risk"?badge("Critical","b-risk"):pri(r)==="warn"?badge("High","b-warn"):badge("Moderate","b-ok")}],th)}</div><div class="method">Themes are inferred from subject keywords. Spec section and sheet references replace this once connected.</div>`)}
   <div class="sl">Consultant performance</div>
@@ -1285,8 +1599,10 @@ function render(){
   const kids = childLevel? Object.entries(RH.groupBy(P,p=>childLevel==="project"?p.key:p[childLevel])).map(([k,v])=>({l:childLevel,v:k,n:childLevel==="project"?v[0].name:k,c:v.length})).sort((a,b)=>b.c-a.c).slice(0,10):[];
   $("crumbs").innerHTML = crumbs.map((x,i)=>`<span class="crumb active" data-l="${x.l}" data-v="${esc(x.v)}">${esc(x.n)}<span>${fmtN(x.c)}</span></span>${i<crumbs.length-1?'<span style="color:var(--gray);padding:4px 2px">›</span>':""}`).join("") + (kids.length?'<span style="color:var(--gray);padding:4px 2px">›</span>':"") + kids.map(x=>`<span class="crumb" data-l="${x.l}" data-v="${esc(x.v)}">${esc(x.n)}<span>${fmtN(x.c)}</span></span>`).join("");
   $("crumbs").querySelectorAll(".crumb").forEach(el=>el.addEventListener("click",()=>{ setScope(el.dataset.l, el.dataset.v); }));
+  S._actions=[];
   V[S.view](c);
   renderRail(c);
+  bindActionBlocks();
   enhanceTables();
   $("footL").textContent = `${S.M.firm} · ${fmtN(S.M.rfis.length)} RFIs and ${fmtN(S.M.subs.length)} submittals loaded · computed ${new Date().toLocaleTimeString()}`;
 }

@@ -111,6 +111,16 @@ a{color:var(--blue)}
 .g12{grid-template-columns:1fr 2fr}
 @media (max-width:1180px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}}
 @media (max-width:900px){#app.on{grid-template-columns:1fr}.rail{position:static;height:auto}.g2,.g21,.g12,.g3,.g4{grid-template-columns:1fr}.main{padding:18px}.drops{grid-template-columns:1fr}}
+.tf-btn.tf-c.off{opacity:.35;cursor:not-allowed}
+@media print{
+  #app.on{display:block}
+  .rail,.rail2,.tf,.crumbs,#healthBar,.foot,.reload,.btn,button{display:none!important}
+  .mgrid{display:block}
+  .main{padding:0}
+  body{background:#fff}
+  .cai-badge{display:none!important}
+  .card,.mc,.memo,.ins,.ib-block{break-inside:avoid;box-shadow:none}
+}
 
 .mc{background:var(--white);border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:8px;padding:14px 16px 12px}
 .mc.warn{border-left-color:var(--warn)} .mc.risk{border-left-color:var(--risk)} .mc.good{border-left-color:var(--good)} .mc.muted{border-left-color:#C9CED4}
@@ -248,6 +258,7 @@ table.t td.n{font-weight:700;color:var(--navy)}
     <button class="nav-btn" data-view="week"><span class="dot"></span>This week</button>
     <div class="r-label">Exposure</div>
     <button class="nav-btn" data-view="open"><span class="dot"></span>Open and past due</button>
+    <button class="nav-btn" data-view="oac"><span class="dot"></span>OAC brief</button>
     <button class="nav-btn" data-view="rfi"><span class="dot"></span>RFI health</button>
     <button class="nav-btn" data-view="sub"><span class="dot"></span>Submittal health</button>
     <button class="nav-btn" data-view="div"><span class="dot"></span>Division health</button>
@@ -786,12 +797,19 @@ function deriveActions(c){
   if(past.length){
     const x=past[0], it=x.it, label=(it.kind==="rfi"?"RFI ":"Submittal ")+it.number;
     const hold=holderOf(it);
-    A.push({views:["week","open"],level:x.over>30?"risk":"warn",w:6,
+    A.push({views:["week","open","oac"],level:x.over>30?"risk":"warn",w:6,
       title:`${esc(label)} on ${pj(it.project)} is ${fmtN(x.over)} days past due`,
       why:`${esc(it.kind==="rfi"?it.subject:it.name)} was due ${fmtDate(it.kind==="rfi"?it.respondBy:it.returnBy)}${hold?`, and ${esc(hold)} is holding it`:""}. A ${it.kind==="rfi"?"question":"review"} this old has usually been worked around in the field, and a workaround the record never captured is where liability lives.`,
       action:`Call the project team on ${pj(it.project)} today. Either close it with an answer, or close the record with what actually happened.`,
       items:[it], eye:it.kind==="rfi"?"RFI":"Submittal", dtitle:it.number, dsub:S.M.projects[it.project].name});
   }
+
+  { const rr=rrLoops(c); const over=rr.medInt!==null? rr.live.filter(x=>x.days>rr.medInt):rr.live;
+    if(over.length>=3) A.push({views:["week","sub","risk"],level:over.length>=10?"risk":"warn",w:5,
+      title:`${fmtN(over.length)} revise and resubmit package${over.length>1?"s have":" has"} not come back`,
+      why:`Each was returned for revision and no later revision appears on the record${rr.medInt!==null?`, past the ${fmtN(rr.medInt)} day turnaround the record considers normal`:""}. The review is finished but the work is not, and an unclosed loop reads as architect delay in every schedule conversation it touches.`,
+      action:`Have each project team nudge the submitter on the oldest loops this week. The full list lives in Submittal health, with the package and who it came from on every line.`,
+      items:over.slice(0,12).map(x=>x.s), eye:"Submittal", dtitle:"Awaiting resubmittal", dsub:`${fmtN(over.length)} open loops`}); }
 
   // Past-due concentration in one project
   if(past.length>=3){
@@ -821,7 +839,7 @@ function deriveActions(c){
   const comp=past.filter(x=>compRx.test(x.it.kind==="rfi"?x.it.subject:x.it.name));
   if(comp.length){
     const first=comp[0].it;
-    A.push({views:["week","open","risk"],level:"risk",w:5.5,
+    A.push({views:["week","open","risk","oac"],level:"risk",w:5.5,
       title:`${fmtN(comp.length)} code-adjacent item${comp.length>1?"s are":" is"} sitting past due`,
       why:`Accessibility and life-safety items carry compliance risk, not just schedule risk. ${esc(first.kind==="rfi"?first.subject:first.name)} on ${pj(first.project)} is the oldest at ${fmtN(comp[0].over)} days over. Corrections after the affected work is closed in cost multiples of a review today.`,
       action:`Move these to the front of the review queue this week, before rough-in and inspections overtake them.`,
@@ -1157,6 +1175,98 @@ function activeProjects(c){
   return [...keys].map(k=>projRow(k,c));
 }
 
+/* ---- Predictive queue: expected windows learned from the record.
+   Each open item gets an expected cycle: its requested date where one
+   exists, otherwise the historical median for its division or kind.
+   Items past 80 percent of their window are flagged before they are
+   overdue. Owner is where the item sits today, never a score. ---- */
+function divMedians(Sall){
+  const g=RH.groupBy(Sall.filter(s=>s.reviewDays!==null&&s.reviewDays>=0&&s.reviewDays<=730),s=>s.divisionName);
+  const m={}; for(const [k,v] of Object.entries(g)){ if(v.length>=30) m[k]=RH.median(v.map(s=>s.reviewDays)); }
+  return m;
+}
+function buildQueue(c){
+  if(c._queue) return c._queue;
+  const dm=divMedians(c.Sall);
+  const fbR=c.base.medResp||5, fbS=c.base.medRev||14;
+  const cutoff=new Date(+c.asOf-84*DAY);
+  const activeSet=new Set([...c.Rall,...c.Sall].filter(i=>i.date&&i.date>=cutoff).map(i=>i.project));
+  const firmRx=new RegExp(S.M.firm.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i");
+  const rows=openItems(c).map(it=>{
+    if(!it.date) return null;
+    const due=it.kind==="rfi"?it.respondBy:it.returnBy;
+    const expected = due? Math.max(1,Math.round((due-it.date)/DAY)) : Math.max(1,Math.round(it.kind==="rfi"?fbR:(dm[it.divisionName]||fbS)));
+    const dueBy = due || new Date(+it.date+expected*DAY);
+    const age=Math.round((c.asOf-it.date)/DAY);
+    const frac=age/expected;
+    const state = (due && dueBy<c.asOf)? "past" : frac>=0.8? "trend" : "in";
+    const daysLeft=Math.round((dueBy-c.asOf)/DAY);
+    let pm; const an=it.attention&&it.attention.name, ao=it.attention&&it.attention.org;
+    if(an && (!ao || firmRx.test(ao))) pm=an; else pm=S.M.projects[it.project].lead||"Unassigned";
+    return {it,dueBy,expected,estimated:!due,age,frac,state,daysLeft,pm,dormant:!activeSet.has(it.project)};
+  }).filter(Boolean);
+  const rowsAll=rows.filter(r=>!r.dormant);
+  const dorm=rows.filter(r=>r.dormant);
+  const stale=rowsAll.filter(r=>r.state==="past" && -r.daysLeft>30);
+  const live=rowsAll.filter(r=>!(r.state==="past" && -r.daysLeft>30));
+  const rank=r=> r.state==="past"? 2000+(-r.daysLeft) : r.state==="trend"? 1000+Math.min(900,r.frac*100) : Math.min(900,r.frac*100);
+  live.sort((a,b)=>rank(b)-rank(a)); stale.sort((a,b)=>rank(b)-rank(a));
+  const q={live,stale,dorm,rank,byPM:RH.groupBy(live,r=>r.pm),past:live.filter(r=>r.state==="past"),trend:live.filter(r=>r.state==="trend"),inwin:live.filter(r=>r.state==="in")};
+  c._queue=q; return q;
+}
+function qBadge(r){
+  if(r.state==="past") return badge(`Past due ${fmtN(-r.daysLeft)}d`,"b-risk");
+  if(r.state==="trend") return badge(r.estimated&&r.frac>=1? `Past typical pace ${fmtN(Math.max(1,r.age-r.expected))}d` : (r.daysLeft<=0?"Due now":`Due in ${fmtN(r.daysLeft)}d`),"b-warn");
+  return badge(`${fmtN(r.daysLeft)}d left`,"b-ok");
+}
+const QUEUE_METHOD=`Expected windows come from each item's requested date where one exists, otherwise from the historical median cycle for its division or kind, marked est. Owner is where the item sits today, from the Attention field or the project lead. Queues reflect workload, contractor quality, and package complexity as much as any one person, so read them as conditions to manage, not scores.`;
+
+/* ---- Revision families: linking resubmittals back to their package.
+   The export mostly carries the current revision of each package, so a
+   lone revision 3 row is still a resubmittal. A package counts as one
+   when its revision is 2+, above its family's first revision, or its
+   number carries a revision suffix. ---- */
+function famKeyNum(n){ return n.toLowerCase().replace(/[\s\-\.]?(r(ev(ision)?)?\.?\s*\d+|resubmittal)\s*$/i,"").replace(/\s+/g," ").trim(); }
+function revFamilies(c){
+  if(c._fam) return c._fam;
+  const fam={};
+  c.Sall.forEach(s=>{ const k=s.project+"|"+famKeyNum(s.number); (fam[k]=fam[k]||[]).push(s); });
+  const famMin={}; for(const k in fam){ famMin[k]=Math.min(...fam[k].map(x=>x.revision)); }
+  const isResub=s=>{ const k=s.project+"|"+famKeyNum(s.number); return s.revision>=2 || s.revision>famMin[k] || famKeyNum(s.number)!==s.number.toLowerCase().replace(/\s+/g," ").trim(); };
+  c._fam={fam,famMin,isResub}; return c._fam;
+}
+function rrLoops(c){
+  if(c._rr) return c._rr;
+  const {fam}=revFamilies(c);
+  const ints=[], open=[];
+  for(const k in fam){
+    const v=[...fam[k]].sort((a,b)=>(a.revision-b.revision)||((+a.date||0)-(+b.date||0)));
+    for(let i=0;i<v.length-1;i++){
+      const p=v[i], n=v[i+1];
+      if(p.resubmit && p.arch.returned && n.date && n.date>=p.arch.returned){
+        const d=Math.round((n.date-p.arch.returned)/DAY); if(d>=0&&d<=365) ints.push(d);
+      }
+    }
+    const last=v[v.length-1];
+    if(last.resubmit && last.arch.returned && last.arch.returned<=c.asOf) open.push({s:last, days:Math.round((c.asOf-last.arch.returned)/DAY)});
+  }
+  const medInt=ints.length>=8? RH.median(ints):null;
+  const cutoff=new Date(+c.asOf-84*DAY);
+  const activeSet=new Set([...c.Rall,...c.Sall].filter(i=>i.date&&i.date>=cutoff).map(i=>i.project));
+  const live=open.filter(x=>activeSet.has(x.s.project)&&x.days<=90).sort((a,b)=>b.days-a.days);
+  const hyg=open.filter(x=>!(activeSet.has(x.s.project)&&x.days<=90));
+  c._rr={intsN:ints.length, medInt, live, hyg}; return c._rr;
+}
+function revSplit(c){
+  if(c._rs) return c._rs;
+  const {isResub}=revFamilies(c);
+  const S2=c.Sb, m=v=>RH.subMetrics(v,c.asOf);
+  const init=S2.filter(s=>!isResub(s)), res=S2.filter(isResub);
+  const dv=Object.values(RH.groupBy(S2,s=>s.divisionName)).map(v=>{ const i=v.filter(s=>!isResub(s)), r=v.filter(isResub); return {k:v[0].divisionName,i,r,iN:i.length,rN:r.length,im:m(i),rm2:m(r)}; })
+    .filter(x=>x.iN>=15&&x.rN>=8).sort((a,b)=>b.rN-a.rN).slice(0,8);
+  c._rs={init,res,im:m(init),rm2:m(res),dv}; return c._rs;
+}
+
 /* ---- Portfolio ---- */
 V.port = c => {
   const P=scopedProjects();
@@ -1209,6 +1319,11 @@ V.port = c => {
 /* ---- This week ---- */
 V.week = c => {
   const open=openItems(c), past=pastDueItems(c);
+  const q=buildQueue(c);
+  const liveQ = S.qShowStale? [...q.live,...q.stale].sort((a,b)=>q.rank(b)-q.rank(a)) : q.live;
+  const pastQ = liveQ.filter(r=>r.state==="past");
+  const byPM = S.qShowStale? RH.groupBy(liveQ,r=>r.pm) : q.byPM;
+  const hygN = q.stale.length + q.dorm.length;
   const rows=activeProjects(c).filter(r=>r.sig.score>0).sort((a,b)=>b.sig.score-a.sig.score||b.periodN-a.periodN).slice(0,5);
   const g=byDim(c.R,c.Sb).slice(0,10);
   const html=`
@@ -1216,16 +1331,33 @@ V.week = c => {
   <div class="grid g4">
     ${metricCard({label:"RFIs received",value:fmtN(c.rm.n),sub:"in period",delta:dl(c,c.rm.n,c.rmp&&c.rmp.n)})}
     ${metricCard({label:"Submittals received",value:fmtN(c.sm.n),sub:"in period",delta:dl(c,c.sm.n,c.smp&&c.smp.n)})}
-    ${metricCard({label:"Open past due",value:fmtN(past.length),sub:`${fmtN(open.length)} open in total`,state:past.length?"risk":"good"})}
+    ${metricCard({label:"Open past due",value:fmtN(q.past.length),sub:`live queue · ${fmtN(q.trend.length)} trending · ${fmtN(hygN)} in record hygiene`,state:q.past.length?"risk":(q.trend.length?"warn":"good")})}
     ${metricCard({label:"Revise and resubmit",value:fmtP(c.sm.resub),sub:`${fmtN(c.sm.resubN)} of ${fmtN(c.sm.acted)} reviewed`,state:"warn",delta:dl(c,c.sm.resub,c.smp&&c.smp.resub,true)})}
   </div>
   ${caiRead([
-    (past.length? {title:`${fmtN(past.length)} item${past.length>1?"s are":" is"} sitting past due`, body:`Of ${fmtN(open.length)} open items in this scope, ${fmtN(past.length)} are past their requested date. The ranked list below is where that exposure concentrates.`, level: past.length>20?"risk":"warn", w:5} : (open.length? {title:`No past-due exposure, ${fmtN(open.length)} items open`, body:`Everything open is still inside its requested window.`, level:"good", w:2}:null)),
+    (q.past.length? {title:`${fmtN(q.past.length)} item${q.past.length>1?"s are":" is"} past due in the live queue`, body:`These are the past-due items on active projects and inside 30 days of their date, the ones a call this week can still close cleanly. ${hygN?`A further ${fmtN(hygN)} older or dormant records are held out as record hygiene below.`:""}`, level: q.past.length>20?"risk":"warn", w:5} : (open.length? {title:`No live past-due exposure, ${fmtN(q.live.length)} items in the queue`, body:`Everything in the live queue is inside its window.${hygN?` ${fmtN(hygN)} older records remain to close out as hygiene.`:""}`, level:"good", w:2}:null)),
+    (q.trend.length? {title:"", body:`${fmtN(q.trend.length)} more item${q.trend.length>1?"s have":" has"} used 80 percent or more of the expected window. Handled this week, none of them becomes a past-due statistic.`, level:q.trend.length>10?"warn":"info", w:4.5}:null),
     (c.cw&&c.rmp&&c.rmp.n>=10? (()=>{ const d=(c.rm.n-c.rmp.n)/c.rmp.n; return Math.abs(d)>0.25? {title:"", body:`RFI volume is ${d>0?"up":"down"} ${fmtP(Math.abs(d))} against ${c.cmpLbl} (${fmtN(c.rm.n)} vs ${fmtN(c.rmp.n)}).`, w:2, level:d>0?"warn":"info"}:null; })():null),
     (g[0]&&g[0].n>= (c.rm.n+c.sm.n)*0.3 && g.length>1? {title:"", body:`${esc(g[0].k)} carries ${fmtP(g[0].n/Math.max(1,c.rm.n+c.sm.n))} of the period's load, more than any other ${dimLabel()}.`, w:1.5}:null),
     (c.sm.acted>=20? (()=>{ const vb=vsBase(c.sm.resub,c.base.resub,{n:c.sm.acted,minN:20}); return vb&&vb.level!=="info"? {title:"", body:`Resubmit rate in the period is ${fmtP(c.sm.resub)}, ${vb.dir} the ${fmtP(c.base.resub)} baseline.`, w:vb.w, level:vb.level}:null; })():null)
   ])}
   ${actionStack(c,"week")}
+  <div class="sl">This week's priorities</div>
+  ${card("The queue, ranked", (pastQ.length||q.trend.length)? `<div id="qTbl">${table([
+    {h:"Item",n:true,f:r=>esc((r.it.kind==="rfi"?"RFI ":"Sub ")+r.it.number)},
+    {h:"Project",f:r=>esc(S.M.projects[r.it.project].name)},
+    {h:"Subject",f:r=>esc(r.it.kind==="rfi"?r.it.subject:r.it.name)},
+    {h:"Owner",f:r=>esc(r.pm)},
+    {h:"Due",f:r=>fmtDate(r.dueBy)+(r.estimated?" est.":"")},
+    {h:"Status",r:true,f:r=>qBadge(r)}
+  ], liveQ.filter(r=>r.state!=="in").slice(0,25))}</div>` : `<div class="empty">Nothing past due and nothing trending overdue in the live queue.</div>`,
+  `${fmtN(pastQ.length)} past due · ${fmtN(q.trend.length)} trending · ${fmtN(q.inwin.length)} in window`)}
+  ${hygN?`<div class="method">${fmtN(q.stale.length)} item${q.stale.length===1?"":"s"} more than 30 days over and ${fmtN(q.dorm.length)} on dormant projects are folded out as record hygiene: likely resolved in the field, waiting to be closed on the record. The sweep lives in Open and past due. <a href="#" id="qStaleBtn">${S.qShowStale?"Fold the 30d+ items back out":"Show the 30d+ items in the queue"}</a></div>`:""}
+  <div class="sl">By project manager</div>
+  <div class="grid g3" id="pmCards">
+    ${Object.entries(byPM).map(([pm,items])=>({pm,items,past:items.filter(r=>r.state==="past").length,trend:items.filter(r=>r.state==="trend").length})).sort((a,b)=>(b.past-a.past)||(b.trend-a.trend)||(b.items.length-a.items.length)).slice(0,12).map(x=>`<div class="mc ${x.past?"risk":x.trend?"warn":""}" data-pm="${esc(x.pm)}" style="cursor:pointer"><div class="l">${esc(x.pm)}</div><div class="v">${fmtN(x.items.length)}<small>in queue</small></div><div class="s">${fmtN(x.past)} past due · ${fmtN(x.trend)} trending · click for the ordered list</div></div>`).join("")}
+  </div>
+  <div class="method">${QUEUE_METHOD}</div>
   <div class="sl">CAi briefing</div>
   <div class="card" style="margin-bottom:16px"><div class="ct"><span>Editorial read on ${esc(scopeLabel())}</span><span class="tag">${esc(c.w.label)}</span></div>
     <div id="briefBox">${S.brief&&S.brief.scope===scopeLabel()? renderBriefing() : `<div class="empty" style="padding:18px">CAi writes a leadership briefing from the computed record: what stands out, what explains it, and what conversation it supports.</div>`}</div>
@@ -1241,6 +1373,13 @@ V.week = c => {
     ${card("Weekly volume", chartBox("cWeekVol"), "RFIs and submittals received")}
   </div>`;
   $("view").innerHTML=html;
+  const qRows=liveQ.filter(r=>r.state!=="in").slice(0,25);
+  if($("qTbl")) bindRows($("qTbl"),qRows,r=>openDrawer(r.it.kind==="rfi"?"RFI":"Submittal",r.it.number,S.M.projects[r.it.project].name,[r.it]));
+  const qs=$("qStaleBtn"); if(qs) qs.addEventListener("click",e=>{ e.preventDefault(); S.qShowStale=!S.qShowStale; render(); });
+  document.querySelectorAll("#pmCards .mc").forEach(el=>el.addEventListener("click",()=>{
+    const items=(byPM[el.dataset.pm]||[]);
+    openDrawer("Owner",el.dataset.pm,`${fmtN(items.length)} open items, handled-first order`,items.map(r=>r.it));
+  }));
   const bb=$("briefBtn"); if(bb) bb.addEventListener("click",()=>{ S.briefKey=$("briefKey").value; generateBriefing(c); });
   document.querySelectorAll("#decisions .ins").forEach(el=>el.addEventListener("click",()=>{ const r=rows.find(x=>x.key===el.dataset.k); openDrawer("Project",r.name,`${fmtN(r.Ro.length)} RFIs · ${fmtN(r.So.length)} submittals on record`,[...r.Ro.filter(x=>x.open),...r.So.filter(x=>x.open),...r.R,...r.Sb].filter((x,i,a)=>a.indexOf(x)===i)); }));
   mkChart("cWeekLoad",{type:"bar",data:{labels:g.map(x=>x.k),datasets:[{label:"RFIs",data:g.map(x=>x.R.length),backgroundColor:COLORS[0]},{label:"Submittals",data:g.map(x=>x.S.length),backgroundColor:COLORS[1]}]},options:{indexAxis:"y",scales:{x:{stacked:true,grid:{color:"#EEF0F2"}},y:{stacked:true,grid:{display:false}}}}});
@@ -1292,6 +1431,103 @@ V.open = c => {
   bindRows($("pastTbl"),rows,r=>openDrawer(r.it.kind==="rfi"?"RFI":"Submittal",r.it.number,S.M.projects[r.it.project].name,[r.it]));
   mkChart("cAging",{type:"bar",data:{labels:buckets.map(b=>b[0]),datasets:[{label:"RFIs",data:bR,backgroundColor:COLORS[0]},{label:"Submittals",data:bS,backgroundColor:COLORS[1]}]},options:{scales:{x:{stacked:true},y:{stacked:true}}}});
 };
+
+/* ---- OAC meeting brief ---- */
+function oacHolder(r){
+  const it=r.it;
+  if(it.kind==="rfi"){ const h=holderOf(it); return h||"Not recorded"; }
+  if(it.eng&&it.eng.received&&!it.eng.returned&&it.eng.reviewer.org) return it.eng.reviewer.org;
+  if(it.arch&&it.arch.returned) return "Returned, awaiting closeout";
+  return S.M.firm;
+}
+function firmBase(c){
+  if(!S.M._firmBase) S.M._firmBase={rm:RH.rfiMetrics(S.M.rfis,c.asOf), sm:RH.subMetrics(S.M.subs,c.asOf)};
+  return S.M._firmBase;
+}
+V.oac = c => {
+  const q=buildQueue(c);
+  if(S.level!=="project"){
+    const rows=activeProjects(c).map(r=>{
+      const qq=q.live.filter(x=>x.it.project===r.key);
+      return {...r, qPast:qq.filter(x=>x.state==="past").length, qTrend:qq.filter(x=>x.state==="trend").length, qOpen:qq.length};
+    }).filter(r=>r.qOpen>0).sort((a,b)=>(b.qPast-a.qPast)||(b.qTrend-a.qTrend)||(b.qOpen-a.qOpen));
+    $("view").innerHTML=`
+    <div class="memo"><div class="m-e">OAC meeting support</div><div class="m-t">Pick the project</div><div class="m-s">The brief is prepared one project at a time, the way the meeting happens. Click a row to open that project's brief.</div></div>
+    ${caiRead([{title:"Walk in with the record, not recollection",body:"For any project, the brief assembles overdue items, items approaching their dates, where each one sits today, and the numbers behind the delay conversation. When someone says the architect is holding up the project, this is the page that answers.",level:"info",w:1}])}
+    ${rows.length? card("Projects with open exposure", `<div id="oacPick">${table([
+      {h:"Project",k:"name",n:true},
+      {h:"Client",f:r=>esc(r.p.client)},
+      {h:"Lead",f:r=>esc(r.p.studio)},
+      {h:"Past due",r:true,f:r=>fmtN(r.qPast)},
+      {h:"Trending",r:true,f:r=>fmtN(r.qTrend)},
+      {h:"Open",r:true,f:r=>fmtN(r.qOpen)},
+      {h:"Signal",f:r=>sigBadge(r.sig.level)}
+    ],rows)}</div>`, `${fmtN(rows.length)} projects · ranked by exposure`) : `<div class="empty">No open items on active projects in this scope.</div>`}`;
+    if($("oacPick")) bindRows($("oacPick"),rows,r=>{ S.view="oac"; setScope("project",r.key); });
+    return;
+  }
+  const past=[...q.past].sort((a,b)=>a.daysLeft-b.daysLeft);
+  const trend=q.trend;
+  const hold=RH.groupBy(q.live,oacHolder);
+  const holders=Object.entries(hold).map(([k,v])=>({k,n:v.length,items:v})).sort((a,b)=>b.n-a.n);
+  const fb=firmBase(c);
+  const consRev=c.Sall.filter(s=>s.eng&&s.eng.received&&s.eng.returned).map(s=>days_(s.eng.received,s.eng.returned)).filter(x=>x!==null&&x>=0&&x<=730);
+  const consMed=consRev.length>=8? RH.median(consRev):null;
+  const ev=[];
+  if(c.base.medRev!==null&&c.base.revN>=8) ev.push(`Median submittal review on this project runs ${fmtD(c.base.medRev,0)} days${c.base.medReq!==null?` against a requested ${fmtD(c.base.medReq,0)}`:""}, across ${fmtN(c.base.revN)} returned reviews. The firm's record overall runs ${fmtD(fb.sm.medRev,0)} days.`);
+  if(c.base.resub!==null&&c.base.acted>=8) ev.push(`${fmtN(c.base.resubN)} of ${fmtN(c.base.acted)} reviewed packages came back revise and resubmit (${fmtP(c.base.resub)}${fb.sm.resub!==null?`, firm baseline ${fmtP(fb.sm.resub)}`:""}). Each of those cycles began with the package as submitted, not with the review.`);
+  if(consMed!==null) ev.push(`Consultant reviews on this project run ${fmtD(consMed,0)} days median across ${fmtN(consRev.length)} packages, recorded separately from ${esc(S.M.firm)}'s own reviews.`);
+  if(c.base.onTime!==null&&c.base.respN>=8) ev.push(`${fmtP(c.base.onTime)} of answered RFIs with a requested date were answered inside that date, across ${fmtN(c.base.respN)} answered RFIs on record.`);
+  $("view").innerHTML=`
+  <div class="memo"><div class="m-e">OAC meeting brief</div><div class="m-t">${esc(scopeLabel())}</div><div class="m-s">Prepared from data through ${fmtDate(c.asOf)} · every line opens to its items · print for the meeting</div></div>
+  <div class="grid g4">
+    ${metricCard({label:"Open RFIs",value:fmtN(q.live.filter(r=>r.it.kind==="rfi").length),sub:"on this project",state:"warn"})}
+    ${metricCard({label:"Pending submittals",value:fmtN(q.live.filter(r=>r.it.kind==="sub").length),sub:"review not complete",state:"warn"})}
+    ${metricCard({label:"Past due",value:fmtN(past.length),sub:past.length?`oldest ${fmtN(-past[0].daysLeft)} days over`:(q.stale.length?"live queue clear":"nothing past due"),state:past.length?"risk":"good"})}
+    ${metricCard({label:"Trending overdue",value:fmtN(trend.length),sub:"80 percent of window used",state:trend.length?"warn":"good"})}
+  </div>
+  ${q.stale.length?`<div class="method">${fmtN(q.stale.length)} further item${q.stale.length===1?"":"s"} on this project ${q.stale.length===1?"is":"are"} more than 30 days past date and treated as record closeout rather than live agenda: almost certainly resolved in the field, waiting to be closed on the record. <a href="#" id="oacStale">Open the list</a> to close them out before the meeting if the owner is likely to raise them.</div>`:""}
+  ${caiRead([
+    (past.length? {title:`${fmtN(past.length)} item${past.length>1?"s":""} on the table for this meeting`, body:`Oldest is ${fmtN(-past[0].daysLeft)} days over. ${holders.length?`Of everything open, ${esc(holders[0].k)} holds the largest share at ${fmtN(holders[0].n)}.`:""} Leave the meeting with an owner and a date on each past-due line.`, level:past.length>5?"risk":"warn", w:5}:{title:"Nothing past due walking into this meeting", body:`${fmtN(q.live.length)} items are open and inside their windows. The approaching-dates list below is what keeps it that way.`, level:"good", w:3}),
+    (trend.length? {title:"", body:`${fmtN(trend.length)} more item${trend.length>1?"s are":" is"} approaching the line. Agreeing dates on those now costs one agenda minute; explaining them next meeting costs more.`, level:"warn", w:3}:null)
+  ])}
+  ${actionStack(c,"oac",2)}
+  ${card("Overdue, oldest first", past.length? `<div id="oacPast">${table([
+    {h:"Item",n:true,f:r=>esc((r.it.kind==="rfi"?"RFI ":"Sub ")+r.it.number)},
+    {h:"Subject",f:r=>esc(r.it.kind==="rfi"?r.it.subject:r.it.name)},
+    {h:"With",f:r=>esc(oacHolder(r))},
+    {h:"Due",f:r=>fmtDate(r.dueBy)},
+    {h:"Days over",r:true,f:r=>`<span class="badge ${-r.daysLeft>30?"b-risk":-r.daysLeft>7?"b-warn":"b-ok"}">${fmtN(-r.daysLeft)}</span>`}
+  ],past)}</div>`:`<div class="empty">Nothing past due.</div>`, `${fmtN(past.length)} items`)}
+  ${card("Approaching their dates", trend.length? `<div id="oacTrend">${table([
+    {h:"Item",n:true,f:r=>esc((r.it.kind==="rfi"?"RFI ":"Sub ")+r.it.number)},
+    {h:"Subject",f:r=>esc(r.it.kind==="rfi"?r.it.subject:r.it.name)},
+    {h:"Owner",f:r=>esc(r.pm)},
+    {h:"Due",f:r=>fmtDate(r.dueBy)+(r.estimated?" est.":"")},
+    {h:"Status",r:true,f:r=>qBadge(r)}
+  ],trend)}</div>`:`<div class="empty">Nothing trending overdue.</div>`, `${fmtN(trend.length)} items`)}
+  ${(()=>{ const rr=rrLoops(c); return rr.live.length? card("Awaiting resubmittal", `<div id="oacRR">${table([
+    {h:"Submittal",n:true,f:r=>esc("Sub "+r.s.number)},
+    {h:"Package",f:r=>esc(r.s.name)},
+    {h:"From",f:r=>esc(r.s.gc==="(internal)"?"Internal":r.s.gc)},
+    {h:"Returned",f:r=>fmtDate(r.s.arch.returned)},
+    {h:"Waiting",r:true,f:r=>badge(`${fmtN(r.days)}d`, rr.medInt!==null&&r.days>rr.medInt?"b-risk":"b-warn")}
+  ],rr.live)}</div>`+`<div class="method">Returned revise and resubmit, with no later revision on the record. Worth an agenda minute: the review is complete and these packages sit with the submitter, not the architect.</div>`, `${fmtN(rr.live.length)} open loops`):"";})()}
+  ${card("Where the ball sits", holders.length? `<div id="oacHold">${table([
+    {h:"Holding",k:"k",n:true},
+    {h:"Open items",r:true,f:r=>fmtN(r.n)},
+    {h:"Past due among them",r:true,f:r=>fmtN(r.items.filter(x=>x.state==="past").length)}
+  ],holders)}</div>`+`<div class="method">RFI holders come from ball in court where the export records one; submittal position is read from the review steps. Unrecorded means the export carries no holder, not that nobody is working it.</div>`:`<div class="empty">No open items.</div>`, "click a row for the items")}
+  ${ev.length? card("The record behind the delay conversation", ev.map(e=>`<div class="note" style="margin-bottom:8px">${e}</div>`).join("")+`<div class="method">Each figure is computed from this project's rows and can be opened item by item elsewhere in the portal. Review pace and rework rates reflect package quality, complexity, and workload together; they are conditions to manage in the meeting, not scores for any one party.</div>`, "for when the delay is attributed to the architect"):""}
+  <div style="margin-top:16px"><button class="btn" id="oacPrint" style="padding:9px 18px">Print or save as PDF</button></div>`;
+  if($("oacPast")) bindRows($("oacPast"),past,r=>openDrawer(r.it.kind==="rfi"?"RFI":"Submittal",r.it.number,scopeLabel(),[r.it]));
+  if($("oacTrend")) bindRows($("oacTrend"),trend,r=>openDrawer(r.it.kind==="rfi"?"RFI":"Submittal",r.it.number,scopeLabel(),[r.it]));
+  { const rr=rrLoops(c); if($("oacRR")) bindRows($("oacRR"),rr.live,r=>openDrawer("Submittal",r.s.number,scopeLabel(),[r.s])); }
+  if($("oacHold")) bindRows($("oacHold"),holders,r=>openDrawer("Holder",r.k,`${fmtN(r.n)} open items`,r.items.map(x=>x.it)));
+  const os=$("oacStale"); if(os) os.addEventListener("click",e=>{ e.preventDefault(); openDrawer("Record closeout","30+ days past date",`${fmtN(q.stale.length)} items to close on the record`,q.stale.map(x=>x.it)); });
+  const pb=$("oacPrint"); if(pb) pb.addEventListener("click",()=>window.print());
+};
+function days_(a,b){ return (a&&b)? Math.round((b-a)/DAY) : null; }
 
 /* ---- RFI health ---- */
 V.rfi = c => {
@@ -1353,9 +1589,44 @@ V.sub = c => {
   ${caiRead([
     (c.sm.acted>=20? (()=>{ const vb=vsBase(c.sm.resub,c.base.resub,{n:c.sm.acted,minN:20}); return {title:`Resubmit rate is ${fmtP(c.sm.resub)}, ${vb?vb.dir:"vs"} the ${fmtP(c.base.resub)} baseline`, body:`${fmtN(c.sm.resubN)} of ${fmtN(c.sm.acted)} reviewed submittals came back revise and resubmit. Every one is a second review the fee didn't plan for.`, level:vb?vb.level:"info", w:3}; })():null),
     (dv[0]&&dv[0].sm.acted>=15? {title:"", body:`${esc(dv[0].k)} leads on volume (${fmtN(dv[0].n)}); the highest resubmit division with real volume is ${esc((dv.filter(d=>d.sm.acted>=15).sort((a,b)=>(b.sm.resub||0)-(a.sm.resub||0))[0]||dv[0]).k)} at ${fmtP((dv.filter(d=>d.sm.acted>=15).sort((a,b)=>(b.sm.resub||0)-(a.sm.resub||0))[0]||dv[0]).sm.resub)}.`, w:2}:null),
-    (c.sm.revN>=10&&c.sm.medRev!==null&&c.sm.medReq!==null? {title:"", body:`Median review runs ${fmtD(c.sm.medRev,0)} days against a requested ${fmtD(c.sm.medReq,0)}${c.sm.medRev>c.sm.medReq?" — the review window is being missed more often than met":""}.`, w:c.sm.medRev>c.sm.medReq?2.5:1, level:c.sm.medRev>c.sm.medReq?"warn":"info"}:null)
+    (c.sm.revN>=10&&c.sm.medRev!==null&&c.sm.medReq!==null? {title:"", body:`Median review runs ${fmtD(c.sm.medRev,0)} days against a requested ${fmtD(c.sm.medReq,0)}${c.sm.medRev>c.sm.medReq?" — the review window is being missed more often than met":""}.`, w:c.sm.medRev>c.sm.medReq?2.5:1, level:c.sm.medRev>c.sm.medReq?"warn":"info"}:null),
+    ((()=>{const rs=revSplit(c); const tot=rs.init.length+rs.res.length; return tot>=30&&rs.res.length? {title:"", body:`${fmtN(rs.res.length)} of ${fmtN(tot)} packages in this period arrived as resubmittals, the same work reviewed a second time. First-pass revise and resubmit sits at ${fmtP(rs.im.resub)}.`, w:2, level:rs.res.length/tot>0.15?"warn":"info"}:null;})())
   ])}
   ${actionStack(c,"sub")}
+  ${(()=>{ const rs=revSplit(c); const tot=rs.init.length+rs.res.length; const share=tot?rs.res.length/tot:null; return `
+  <div class="sl">Initial packages vs resubmittals</div>
+  <div class="grid g4">
+    ${metricCard({label:"Initial packages",value:fmtN(rs.init.length),sub:`median review ${fmtD(rs.im.medRev,0)}d`})}
+    ${metricCard({label:"Resubmittals",value:fmtN(rs.res.length),sub:`${fmtP(share)} of period volume`,state:rs.res.length?"warn":"good"})}
+    ${metricCard({label:"Resubmittal review",value:fmtD(rs.rm2.medRev,0),unit:"days",sub:`initial packages ${fmtD(rs.im.medRev,0)}d median`})}
+    ${metricCard({label:"First-pass revise and resubmit",value:fmtP(rs.im.resub),sub:`resubmittals fail again at ${fmtP(rs.rm2.resub)}`,state:"warn"})}
+  </div>
+  ${rs.dv.length? card("Where resubmittals concentrate", `<div id="rsTbl">${table([
+    {h:"Division",k:"k",n:true},
+    {h:"Initial",r:true,f:r=>fmtN(r.iN)},
+    {h:"Initial median",r:true,f:r=>fmtD(r.im.medRev,0)+"d"},
+    {h:"Resubmittals",r:true,f:r=>fmtN(r.rN)},
+    {h:"Resub median",r:true,f:r=>fmtD(r.rm2.medRev,0)+"d"},
+    {h:"Fail again",r:true,f:r=>fmtP(r.rm2.resub)}
+  ],rs.dv)}</div>`+`<div class="method">A package counts as a resubmittal when its revision is 2 or higher, above its family's first revision, or its number carries a revision suffix. Volume is not effort: every resubmittal is the same package reviewed again, and none of it was in the fee.</div>`,"click a row for the resubmittals"):""}`;})()}
+  ${(()=>{ const rr=rrLoops(c); const over=rr.medInt!==null? rr.live.filter(x=>x.days>rr.medInt):[]; return `
+  <div class="sl">Revise and resubmit, never returned</div>
+  <div class="grid g4">
+    ${metricCard({label:"Open loops",value:fmtN(rr.live.length),sub:"returned for revision, no resubmittal on record",state:rr.live.length?"warn":"good"})}
+    ${metricCard({label:"Overdue for resubmittal",value:rr.medInt!==null?fmtN(over.length):"–",sub:rr.medInt!==null?`past the typical ${fmtN(rr.medInt)}d turnaround`:"not enough completed cycles to set a pace",state:over.length?"risk":"good"})}
+    ${metricCard({label:"Typical turnaround",value:rr.medInt!==null?fmtN(rr.medInt):"–",unit:rr.medInt!==null?"days":"",sub:`from ${fmtN(rr.intsN)} completed resubmit cycles`})}
+    ${metricCard({label:"In record hygiene",value:fmtN(rr.hyg.length),sub:"older than 90 days or on dormant projects"})}
+  </div>
+  ${card("The open loops, oldest first", rr.live.length? `<div id="rrTbl">${table([
+    {h:"Submittal",n:true,f:r=>esc("Sub "+r.s.number)},
+    {h:"Project",f:r=>esc(S.M.projects[r.s.project].name)},
+    {h:"Package",f:r=>esc(r.s.name)},
+    {h:"From",f:r=>esc(r.s.gc==="(internal)"?"Internal":r.s.gc)},
+    {h:"Returned",f:r=>fmtDate(r.s.arch.returned)},
+    {h:"Waiting",r:true,f:r=>badge(`${fmtN(r.days)}d`, rr.medInt!==null&&r.days>rr.medInt?"b-risk":"b-warn")}
+  ],rr.live)}</div>`:`<div class="empty">No open loops inside the 90 day horizon on active projects.${rr.hyg.length?` The ${fmtN(rr.hyg.length)} older unreturned records sit in record hygiene, most from projects since closed out.`:""}</div>`,
+  `${fmtN(rr.live.length)} awaiting resubmittal · active projects, 90 day horizon`)}
+  <div class="method">An open loop is a package returned revise and resubmit with no later revision found on the record. A resubmittal refiled under a renamed number will not match, so read each line as a follow-up to make, not a verdict. The review is finished; the work is not, and until the package comes back that gap sits with the submitter.</div>`;})()}
   <div class="grid g21">
     ${card("Volume and resubmit rate by spec division", chartBox("cSubDiv")+`<div class="method">Spec division is read from the leading digits of the submittal number.</div>`)}
     ${card("Architect action", chartBox("cSubAct"))}
@@ -1366,6 +1637,8 @@ V.sub = c => {
   </div>
   ${card("Submittal signals by "+dimLabel(), `<div id="subTbl">${table([{h:dimLabel(),k:"k",n:true},{h:"Submittals",r:true,f:r=>fmtN(r.sm.n)},{h:"Pending",r:true,f:r=>fmtN(r.sm.open)},{h:"Resubmit",r:true,f:r=>fmtP(r.sm.resub)},{h:"Median review",r:true,f:r=>fmtD(r.sm.medRev,0)+"d"},{h:"Signal",f:r=>sigBadge(r.sig.level)}],sigRows)}</div>`)}`;
   bindRows($("subTbl"),sigRows,r=>openDrawer(dimLabel(),r.k,`${fmtN(r.S.length)} submittals in period`,r.S));
+  { const rs=revSplit(c); if($("rsTbl")) bindRows($("rsTbl"),rs.dv,r=>openDrawer("Division",r.k,`${fmtN(r.rN)} resubmittals in period`,r.r)); }
+  { const rr=rrLoops(c); if($("rrTbl")) bindRows($("rrTbl"),rr.live,r=>openDrawer("Submittal",r.s.number,S.M.projects[r.s.project].name,[r.s])); }
   const dual=(labels,vol,rate,volLabel)=>({type:"bar",data:{labels,datasets:[{label:volLabel,data:vol,backgroundColor:COLORS[0],yAxisID:"y"},{label:"Resubmit rate",data:rate.map(x=>x===null?null:Math.round(x*1000)/10),type:"line",borderColor:COLORS[4],backgroundColor:COLORS[4],yAxisID:"y1",tension:.3}]},options:{scales:{y1:{position:"right",beginAtZero:true,grid:{display:false},ticks:{callback:v=>v+"%",font:{size:11}}}}}});
   mkChart("cSubDiv",dual(dv.map(d=>d.k),dv.map(d=>d.n),dv.map(d=>d.sm.resub),"Submittals"));
   mkChart("cSubAct",{type:"doughnut",data:{labels:actE.map(a=>a[0]),datasets:[{data:actE.map(a=>a[1].length),backgroundColor:COLORS}]},options:{plugins:{legend:{position:"bottom"}}}});
@@ -1572,7 +1845,7 @@ V.risk = c => {
 </script>
 <script>
 /* ===================== Wiring ===================== */
-const TITLES={port:"Portfolio",week:"This week",open:"Open and past due",rfi:"RFI health",sub:"Submittal health",div:"Division health",sky:"SkyView",signal:"RFI and submittal signal",fee:"Fee and scope",res:"Resource planning",risk:"Risk mitigation"};
+const TITLES={port:"Portfolio",week:"This week",open:"Open and past due",oac:"OAC meeting brief",rfi:"RFI health",sub:"Submittal health",div:"Division health",sky:"SkyView",signal:"RFI and submittal signal",fee:"Fee and scope",res:"Resource planning",risk:"Risk mitigation"};
 const FIRM_ONLY=new Set(["fee","res","risk"]);
 function render(){
   if(!S.M) return;
@@ -1638,8 +1911,9 @@ $("scopeLevel").addEventListener("change",()=>{ fillScopeValues(); const lvl=$("
 $("scopeValue").addEventListener("change",()=>setScope($("scopeLevel").value,$("scopeValue").value));
 $("dim").addEventListener("change",()=>{ S.dim=$("dim").value; render(); });
 document.querySelectorAll("#tf .tf-btn").forEach(b=>b.addEventListener("click",()=>{
-  if(b.dataset.p){ S.period=b.dataset.p; document.querySelectorAll("[data-p]").forEach(x=>x.classList.toggle("active",x===b)); if(S.period==="all"){ S.cmp="none"; document.querySelectorAll("[data-c]").forEach(x=>x.classList.toggle("active",x.dataset.c==="none")); } }
-  else { if(S.period==="all") return; S.cmp=b.dataset.c; document.querySelectorAll("[data-c]").forEach(x=>x.classList.toggle("active",x===b)); }
+  if(b.dataset.p){ S.period=b.dataset.p; document.querySelectorAll("[data-p]").forEach(x=>x.classList.toggle("active",x===b)); if(S.period==="all"){ S.cmp="none"; document.querySelectorAll("[data-c]").forEach(x=>{x.classList.toggle("active",x.dataset.c==="none");}); }
+    document.querySelectorAll("[data-c]").forEach(x=>x.classList.toggle("off",S.period==="all")); }
+  else { if(S.period==="all"){ const rl=$("rangeLbl"); rl.textContent="Comparison needs a bounded period. Pick Last 4 weeks, Last 12 weeks, This quarter, or This year first."; return; } S.cmp=b.dataset.c; document.querySelectorAll("[data-c]").forEach(x=>x.classList.toggle("active",x===b)); }
   render();
 }));
 $("dClose").addEventListener("click",closeDrawer);
